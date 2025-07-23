@@ -56,27 +56,25 @@ export interface UserFeedback {
 
 // Create a new budget session
 /**
- * Create a new budget session.
- * We only insert columns that are guaranteed to exist in the deployed schema
- * (id will be auto-generated and created_at has a default).
+ * Create a new budget session (client-side safe).
+ * Calls an internal API route that uses the service-role key to bypass RLS.
  */
 export async function createBudgetSession(): Promise<string | null> {
   try {
-    const { data, error } = await supabase
-      .from("budget_sessions")
-      // insert an empty row – defaults handle everything else
-      .insert({})
-      .select("id")
-      .single()
+    const res = await fetch("/api/create-budget-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
 
-    if (error) {
-      console.error("Error creating budget session:", error)
+    if (!res.ok) {
+      console.error("API error creating budget session:", await res.text())
       return null
     }
 
-    return data.id
+    const { id } = await res.json()
+    return id as string
   } catch (err) {
-    console.error("Error creating budget session:", err)
+    console.error("Network error creating budget session:", err)
     return null
   }
 }
