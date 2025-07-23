@@ -55,14 +55,17 @@ export interface UserFeedback {
 }
 
 // Create a new budget session
-export async function createBudgetSession(referrer?: string): Promise<string | null> {
+/**
+ * Create a new budget session.
+ * We only insert columns that are guaranteed to exist in the deployed schema
+ * (id will be auto-generated and created_at has a default).
+ */
+export async function createBudgetSession(): Promise<string | null> {
   try {
     const { data, error } = await supabase
       .from("budget_sessions")
-      .insert({
-        referrer: referrer || (typeof document !== "undefined" ? document.referrer : null),
-        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-      })
+      // insert an empty row – defaults handle everything else
+      .insert({})
       .select("id")
       .single()
 
@@ -72,8 +75,8 @@ export async function createBudgetSession(referrer?: string): Promise<string | n
     }
 
     return data.id
-  } catch (error) {
-    console.error("Error creating budget session:", error)
+  } catch (err) {
+    console.error("Error creating budget session:", err)
     return null
   }
 }
