@@ -2,708 +2,557 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Shield, Users, Plane, Ship, Truck, Zap, ChevronRight, TrendingUp, ArrowLeft, Download } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
+  Shield,
+  Plane,
+  Ship,
+  Users,
+  Wrench,
+  Globe,
+  ArrowLeft,
+  TrendingUp,
+  AlertTriangle,
+  DollarSign,
+  Target,
+} from "lucide-react"
+import {
+  ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
+  Tooltip,
   PieChart,
+  Pie,
   Cell,
-  LineChart,
-  Line,
+  Area,
+  AreaChart,
 } from "recharts"
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
-
-// Military spending data (in billions)
-const militarySpendingData = {
-  2024: {
-    total: 816,
-    byBranch: [
-      {
-        name: "Army",
-        amount: 185.9,
-        percentage: 22.8,
-        color: "#22c55e",
-        icon: Shield,
-        personnel: 485000,
-        categories: {
-          personnel: 89.2,
-          operations: 45.8,
-          procurement: 28.4,
-          rdt: 15.8,
-          construction: 4.2,
-          family: 2.5,
-        },
-      },
-      {
-        name: "Navy",
-        amount: 165.8,
-        percentage: 20.3,
-        color: "#3b82f6",
-        icon: Ship,
-        personnel: 347000,
-        categories: {
-          personnel: 67.4,
-          operations: 42.1,
-          procurement: 38.9,
-          rdt: 13.2,
-          construction: 3.1,
-          family: 1.1,
-        },
-      },
-      {
-        name: "Air Force",
-        amount: 194.0,
-        percentage: 23.8,
-        color: "#06b6d4",
-        icon: Plane,
-        personnel: 329000,
-        categories: {
-          personnel: 71.8,
-          operations: 48.3,
-          procurement: 52.1,
-          rdt: 17.4,
-          construction: 3.2,
-          family: 1.2,
-        },
-      },
-      {
-        name: "Marines",
-        amount: 51.4,
-        percentage: 6.3,
-        color: "#ef4444",
-        icon: Users,
-        personnel: 186000,
-        categories: {
-          personnel: 28.9,
-          operations: 12.8,
-          procurement: 6.2,
-          rdt: 2.1,
-          construction: 1.1,
-          family: 0.3,
-        },
-      },
-      {
-        name: "Space Force",
-        amount: 29.4,
-        percentage: 3.6,
-        color: "#8b5cf6",
-        icon: Zap,
-        personnel: 8600,
-        categories: {
-          personnel: 2.8,
-          operations: 8.9,
-          procurement: 15.2,
-          rdt: 2.1,
-          construction: 0.3,
-          family: 0.1,
-        },
-      },
-      {
-        name: "Defense-Wide",
-        amount: 189.5,
-        percentage: 23.2,
-        color: "#f59e0b",
-        icon: Shield,
-        personnel: 95000,
-        categories: {
-          personnel: 45.2,
-          operations: 89.4,
-          procurement: 32.8,
-          rdt: 18.9,
-          construction: 2.1,
-          family: 1.1,
-        },
-      },
-    ],
-    procurement: {
-      aircraft: {
-        total: 78.4,
-        items: [
-          { name: "F-35 Lightning II", amount: 15.2, quantity: 83, branch: "Multi-Service" },
-          { name: "KC-46 Tanker", amount: 2.8, quantity: 15, branch: "Air Force" },
-          { name: "CH-53K Helicopter", amount: 1.9, quantity: 9, branch: "Marines" },
-          { name: "V-22 Osprey", amount: 1.4, quantity: 14, branch: "Multi-Service" },
-          { name: "Apache Helicopter", amount: 1.2, quantity: 24, branch: "Army" },
-        ],
-      },
-      ships: {
-        total: 32.1,
-        items: [
-          { name: "Virginia-class Submarine", amount: 7.2, quantity: 2, branch: "Navy" },
-          { name: "Arleigh Burke Destroyer", amount: 5.8, quantity: 2, branch: "Navy" },
-          { name: "Ford-class Carrier", amount: 4.1, quantity: 1, branch: "Navy" },
-          { name: "Littoral Combat Ship", amount: 1.8, quantity: 2, branch: "Navy" },
-          { name: "Expeditionary Fast Transport", amount: 0.4, quantity: 2, branch: "Navy" },
-        ],
-      },
-      vehicles: {
-        total: 18.7,
-        items: [
-          { name: "Joint Light Tactical Vehicle", amount: 3.2, quantity: 5420, branch: "Multi-Service" },
-          { name: "Armored Multi-Purpose Vehicle", amount: 1.8, quantity: 164, branch: "Army" },
-          { name: "Bradley Fighting Vehicle Upgrade", amount: 1.4, quantity: 89, branch: "Army" },
-          { name: "Stryker Vehicle", amount: 0.9, quantity: 91, branch: "Army" },
-          { name: "Mine Resistant Vehicle", amount: 0.6, quantity: 234, branch: "Multi-Service" },
-        ],
-      },
-      weapons: {
-        total: 24.3,
-        items: [
-          { name: "Patriot Missile System", amount: 4.2, quantity: 168, branch: "Army" },
-          { name: "HIMARS Rocket System", amount: 2.8, quantity: 36, branch: "Army" },
-          { name: "Tomahawk Missiles", amount: 2.1, quantity: 200, branch: "Navy" },
-          { name: "JASSM Missiles", amount: 1.9, quantity: 414, branch: "Air Force" },
-          { name: "Standard Missiles", amount: 1.6, quantity: 125, branch: "Navy" },
-        ],
-      },
-      other: {
-        total: 19.8,
-        items: [
-          { name: "Cybersecurity Systems", amount: 8.9, quantity: 1, branch: "Defense-Wide" },
-          { name: "Satellite Systems", amount: 4.2, quantity: 12, branch: "Space Force" },
-          { name: "Communications Equipment", amount: 3.1, quantity: 1, branch: "Multi-Service" },
-          { name: "Intelligence Systems", amount: 2.4, quantity: 1, branch: "Defense-Wide" },
-          { name: "Medical Equipment", amount: 1.2, quantity: 1, branch: "Multi-Service" },
-        ],
-      },
-    },
-  },
-}
-
-const personnelCosts = {
-  categories: [
-    { name: "Basic Pay", amount: 89.4, percentage: 29.8 },
-    { name: "Allowances (Housing/Food)", amount: 67.2, percentage: 22.4 },
-    { name: "Healthcare", amount: 55.8, percentage: 18.6 },
-    { name: "Retirement", amount: 42.1, percentage: 14.0 },
-    { name: "Special Pay & Bonuses", amount: 28.9, percentage: 9.6 },
-    { name: "Training & Education", amount: 16.6, percentage: 5.5 },
-  ],
-}
-
-const historicalTrends = [
-  { year: 2020, total: 714, personnel: 289, operations: 278, procurement: 147 },
-  { year: 2021, total: 740, personnel: 295, operations: 285, procurement: 160 },
-  { year: 2022, total: 766, personnel: 301, operations: 292, procurement: 173 },
-  { year: 2023, total: 792, personnel: 307, operations: 298, procurement: 187 },
-  { year: 2024, total: 816, personnel: 312, operations: 304, procurement: 200 },
-]
 
 interface MilitarySpendingBreakdownProps {
   onBack?: () => void
 }
 
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82CA9D", "#FFC658"]
+
 export default function MilitarySpendingBreakdown({ onBack }: MilitarySpendingBreakdownProps) {
-  const [selectedYear, setSelectedYear] = useState("2024")
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("overview")
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null)
 
-  const currentData = militarySpendingData[selectedYear as keyof typeof militarySpendingData]
+  // Defense spending data (in billions)
+  const totalDefenseSpending = 816
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(amount * 1000000000)
-  }
+  const byBranch = [
+    { name: "Army", amount: 173, percentage: 21.2, icon: Users, color: "#0088FE" },
+    { name: "Navy", amount: 165, percentage: 20.2, icon: Ship, color: "#00C49F" },
+    { name: "Air Force", amount: 156, percentage: 19.1, icon: Plane, color: "#FFBB28" },
+    { name: "Space Force", amount: 24, percentage: 2.9, icon: Globe, color: "#FF8042" },
+    { name: "Defense-wide", amount: 298, percentage: 36.5, icon: Shield, color: "#8884D8" },
+  ]
 
-  const formatBillions = (amount: number) => {
-    return `$${amount.toLocaleString()}B`
-  }
+  const byCategory = [
+    { name: "Personnel", amount: 162, percentage: 19.9, description: "Military and civilian pay, benefits" },
+    { name: "Operations & Maintenance", amount: 279, percentage: 34.2, description: "Training, fuel, maintenance" },
+    { name: "Procurement", amount: 145, percentage: 17.8, description: "Weapons systems, equipment" },
+    { name: "Research & Development", amount: 130, percentage: 15.9, description: "Military R&D programs" },
+    { name: "Military Construction", amount: 15, percentage: 1.8, description: "Facilities and infrastructure" },
+    { name: "Family Housing", amount: 1.4, percentage: 0.2, description: "Military family housing" },
+    { name: "Other", amount: 83.6, percentage: 10.2, description: "Special operations, intelligence" },
+  ]
 
-  const formatPersonnel = (count: number) => {
-    return count.toLocaleString()
-  }
+  const majorPrograms = [
+    { name: "F-35 Joint Strike Fighter", cost: 12.5, status: "Active", branch: "Multi-Service" },
+    { name: "Columbia-class Submarine", cost: 9.9, status: "Development", branch: "Navy" },
+    { name: "B-21 Raider Bomber", cost: 8.8, status: "Development", branch: "Air Force" },
+    { name: "Ground Based Strategic Deterrent", cost: 7.3, status: "Development", branch: "Air Force" },
+    { name: "Virginia-class Submarine", cost: 6.2, status: "Active", branch: "Navy" },
+    { name: "KC-46 Tanker", cost: 5.1, status: "Active", branch: "Air Force" },
+    { name: "Patriot Missile System", cost: 4.8, status: "Active", branch: "Army" },
+    { name: "Aegis Combat System", cost: 4.2, status: "Active", branch: "Navy" },
+  ]
 
-  const getBranchData = (branchName: string) => {
-    return currentData.byBranch.find((branch) => branch.name === branchName)
-  }
+  const historicalSpending = [
+    { year: 2019, amount: 732, gdpPercent: 3.4 },
+    { year: 2020, amount: 778, gdpPercent: 3.7 },
+    { year: 2021, amount: 801, gdpPercent: 3.5 },
+    { year: 2022, amount: 816, gdpPercent: 3.2 },
+    { year: 2023, amount: 816, gdpPercent: 3.1 },
+    { year: 2024, amount: 841, gdpPercent: 3.2 },
+    { year: 2025, amount: 886, gdpPercent: 3.4 },
+  ]
 
-  const resetDrillDown = () => {
-    setSelectedBranch(null)
-    setSelectedCategory(null)
-  }
+  const internationalComparison = [
+    { country: "United States", spending: 816, gdpPercent: 3.4, population: 331 },
+    { country: "China", spending: 293, gdpPercent: 1.7, population: 1412 },
+    { country: "Russia", spending: 109, gdpPercent: 4.1, population: 144 },
+    { country: "India", spending: 76, gdpPercent: 2.4, population: 1380 },
+    { country: "Saudi Arabia", spending: 75, gdpPercent: 8.4, population: 35 },
+    { country: "United Kingdom", spending: 68, gdpPercent: 2.3, population: 67 },
+    { country: "Germany", spending: 56, gdpPercent: 1.4, population: 83 },
+    { country: "France", spending: 54, gdpPercent: 1.9, population: 68 },
+  ]
+
+  const regionalSpending = [
+    { region: "Indo-Pacific", amount: 145, percentage: 17.8, priority: "High" },
+    { region: "Europe", amount: 89, percentage: 10.9, priority: "High" },
+    { region: "Middle East", amount: 67, percentage: 8.2, priority: "Medium" },
+    { region: "Homeland", amount: 298, percentage: 36.5, priority: "High" },
+    { region: "Global Operations", amount: 217, percentage: 26.6, priority: "Medium" },
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              {(selectedBranch || selectedCategory) && (
-                <Button variant="ghost" size="sm" onClick={resetDrillDown}>
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back
-                </Button>
-              )}
-              {onBack && (
-                <Button variant="outline" size="sm" onClick={onBack}>
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back to Overview
-                </Button>
-              )}
-              <h1 className="text-3xl font-bold text-gray-900">
-                {selectedBranch
-                  ? `${selectedBranch} Spending Analysis`
-                  : selectedCategory
-                    ? `${selectedCategory} Analysis`
-                    : "Military Spending Breakdown"}
-              </h1>
-            </div>
-            <p className="text-gray-600">
-              {selectedBranch
-                ? `Detailed analysis of ${selectedBranch} budget allocation`
-                : selectedCategory
-                  ? `Comprehensive breakdown of ${selectedCategory} spending`
-                  : "Comprehensive analysis of defense spending by branch, personnel, and equipment"}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2024">FY 2024</SelectItem>
-                <SelectItem value="2023">FY 2023</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {onBack && (
+            <Button variant="outline" size="sm" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
             </Button>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold">Military Spending Analysis</h1>
+            <p className="text-muted-foreground">Comprehensive breakdown of U.S. defense spending and priorities</p>
           </div>
         </div>
+        <Badge variant="outline" className="text-lg px-4 py-2">
+          FY 2025: ${totalDefenseSpending}B
+        </Badge>
+      </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Defense Budget</CardTitle>
-              <Shield className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{formatBillions(currentData.total)}</div>
-              <p className="text-xs text-muted-foreground">+3.0% from previous year</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Personnel</CardTitle>
-              <Users className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatPersonnel(currentData.byBranch.reduce((sum, branch) => sum + branch.personnel, 0))}
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Shield className="h-8 w-8 text-blue-500" />
+              <div className="text-right">
+                <p className="text-2xl font-bold">${totalDefenseSpending}B</p>
+                <p className="text-sm text-muted-foreground">Total Defense</p>
               </div>
-              <p className="text-xs text-muted-foreground">Total active duty</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Personnel Costs</CardTitle>
-              <TrendingUp className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">$312B</div>
-              <p className="text-xs text-muted-foreground">38.2% of total budget</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Procurement</CardTitle>
-              <Truck className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">$200B</div>
-              <p className="text-xs text-muted-foreground">24.5% of total budget</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">By Branch</TabsTrigger>
-            <TabsTrigger value="personnel">Personnel</TabsTrigger>
-            <TabsTrigger value="equipment">Equipment</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            {!selectedBranch ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Branch Overview */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Spending by Military Branch</CardTitle>
-                    <CardDescription>Budget allocation across service branches</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer
-                      config={{
-                        amount: { label: "Amount", color: "hsl(var(--chart-1))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <ChartTooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload[0]) {
-                                const data = payload[0].payload
-                                return (
-                                  <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                    <p className="font-medium">{data.name}</p>
-                                    <p className="text-sm text-gray-600">
-                                      {formatBillions(data.amount)} ({data.percentage}%)
-                                    </p>
-                                    <p className="text-xs text-gray-500">{formatPersonnel(data.personnel)} personnel</p>
-                                  </div>
-                                )
-                              }
-                              return null
-                            }}
-                          />
-                          <PieChart data={currentData.byBranch}>
-                            {currentData.byBranch.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </PieChart>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Branch Details */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Branch Details</CardTitle>
-                    <CardDescription>Click on any branch for detailed breakdown</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {currentData.byBranch.map((branch, index) => {
-                        const IconComponent = branch.icon
-                        return (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                            onClick={() => setSelectedBranch(branch.name)}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg" style={{ backgroundColor: `${branch.color}20` }}>
-                                <IconComponent className="h-5 w-5" style={{ color: branch.color }} />
-                              </div>
-                              <div>
-                                <div className="font-medium">{branch.name}</div>
-                                <div className="text-sm text-gray-600">
-                                  {formatPersonnel(branch.personnel)} personnel
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="text-right">
-                                <div className="font-bold">{formatBillions(branch.amount)}</div>
-                                <div className="text-sm text-gray-600">{branch.percentage}%</div>
-                              </div>
-                              <ChevronRight className="h-4 w-4 text-gray-400" />
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              // Branch Detail View
-              <div className="space-y-6">
-                {(() => {
-                  const branchData = getBranchData(selectedBranch)
-                  if (!branchData) return null
-
-                  const categoryData = [
-                    { name: "Personnel", amount: branchData.categories.personnel, color: "#3b82f6" },
-                    { name: "Operations", amount: branchData.categories.operations, color: "#10b981" },
-                    { name: "Procurement", amount: branchData.categories.procurement, color: "#f59e0b" },
-                    { name: "R&D", amount: branchData.categories.rdt, color: "#ef4444" },
-                    { name: "Construction", amount: branchData.categories.construction, color: "#8b5cf6" },
-                    { name: "Family Programs", amount: branchData.categories.family, color: "#06b6d4" },
-                  ]
-
-                  return (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-lg" style={{ backgroundColor: `${branchData.color}20` }}>
-                                <branchData.icon className="h-6 w-6" style={{ color: branchData.color }} />
-                              </div>
-                              <div>
-                                <div className="text-2xl font-bold">{formatBillions(branchData.amount)}</div>
-                                <div className="text-sm text-gray-600">Total Budget</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <Users className="h-6 w-6 text-green-600" />
-                              <div>
-                                <div className="text-2xl font-bold">{formatPersonnel(branchData.personnel)}</div>
-                                <div className="text-sm text-gray-600">Active Personnel</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <TrendingUp className="h-6 w-6 text-blue-600" />
-                              <div>
-                                <div className="text-2xl font-bold">{branchData.percentage}%</div>
-                                <div className="text-sm text-gray-600">of Total Defense</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>{selectedBranch} Budget Categories</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              {categoryData.map((category, index) => (
-                                <div key={index} className="space-y-2">
-                                  <div className="flex justify-between items-center">
-                                    <span className="font-medium">{category.name}</span>
-                                    <span className="font-bold">{formatBillions(category.amount)}</span>
-                                  </div>
-                                  <Progress value={(category.amount / branchData.amount) * 100} className="h-2" />
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Category Distribution</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ChartContainer
-                              config={{
-                                amount: { label: "Amount", color: "hsl(var(--chart-1))" },
-                              }}
-                              className="h-[300px]"
-                            >
-                              <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={categoryData}>
-                                  <CartesianGrid strokeDasharray="3 3" />
-                                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                                  <YAxis />
-                                  <ChartTooltip
-                                    content={({ active, payload, label }) => {
-                                      if (active && payload && payload.length) {
-                                        return (
-                                          <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                            <p className="font-medium">{label}</p>
-                                            <p className="text-sm text-gray-600">
-                                              {formatBillions(payload[0].value as number)}
-                                            </p>
-                                          </div>
-                                        )
-                                      }
-                                      return null
-                                    }}
-                                  />
-                                  <Bar dataKey="amount" fill="#3b82f6" />
-                                </BarChart>
-                              </ResponsiveContainer>
-                            </ChartContainer>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </>
-                  )
-                })()}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="personnel" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personnel Costs Breakdown</CardTitle>
-                  <CardDescription>Total personnel costs: $312B (38.2% of defense budget)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {personnelCosts.categories.map((category, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">{category.name}</span>
-                          <div className="text-right">
-                            <div className="font-bold">{formatBillions(category.amount)}</div>
-                            <div className="text-sm text-gray-600">{category.percentage}%</div>
-                          </div>
-                        </div>
-                        <Progress value={category.percentage} className="h-2" />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personnel by Branch</CardTitle>
-                  <CardDescription>Active duty personnel distribution</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      personnel: { label: "Personnel", color: "hsl(var(--chart-2))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={currentData.byBranch}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <ChartTooltip
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                  <p className="font-medium">{label}</p>
-                                  <p className="text-sm text-gray-600">
-                                    {formatPersonnel(payload[0].value as number)} personnel
-                                  </p>
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Bar dataKey="personnel" fill="#10b981" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
             </div>
-          </TabsContent>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="equipment" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {Object.entries(currentData.procurement).map(([category, data]) => (
-                <Card key={category}>
-                  <CardHeader>
-                    <CardTitle className="capitalize flex items-center gap-2">
-                      {category === "aircraft" && <Plane className="h-5 w-5" />}
-                      {category === "ships" && <Ship className="h-5 w-5" />}
-                      {category === "vehicles" && <Truck className="h-5 w-5" />}
-                      {category === "weapons" && <Zap className="h-5 w-5" />}
-                      {category === "other" && <Shield className="h-5 w-5" />}
-                      {category} Procurement
-                    </CardTitle>
-                    <CardDescription>Total: {formatBillions(data.total)}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {data.items.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <div>
-                            <div className="font-medium text-sm">{item.name}</div>
-                            <div className="text-xs text-gray-600">
-                              {item.quantity} units • {item.branch}
-                            </div>
-                          </div>
-                          <div className="font-bold text-sm">{formatBillions(item.amount)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <TrendingUp className="h-8 w-8 text-green-500" />
+              <div className="text-right">
+                <p className="text-2xl font-bold">3.4%</p>
+                <p className="text-sm text-muted-foreground">of GDP</p>
+              </div>
             </div>
-          </TabsContent>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="trends" className="space-y-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Users className="h-8 w-8 text-purple-500" />
+              <div className="text-right">
+                <p className="text-2xl font-bold">2.1M</p>
+                <p className="text-sm text-muted-foreground">Personnel</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Globe className="h-8 w-8 text-orange-500" />
+              <div className="text-right">
+                <p className="text-2xl font-bold">39%</p>
+                <p className="text-sm text-muted-foreground">Global Share</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          <strong>Strategic Context:</strong> Defense spending reflects current threats including China's military
+          modernization, Russia's aggression, and emerging technologies like AI and hypersonics.
+        </AlertDescription>
+      </Alert>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="branches">By Branch</TabsTrigger>
+          <TabsTrigger value="programs">Major Programs</TabsTrigger>
+          <TabsTrigger value="comparison">Global Context</TabsTrigger>
+          <TabsTrigger value="regional">Regional Focus</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Defense Spending Trends</CardTitle>
-                <CardDescription>5-year historical view of defense budget categories</CardDescription>
+                <CardTitle>Spending by Category</CardTitle>
+                <CardDescription>How defense dollars are allocated</CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer
-                  config={{
-                    total: { label: "Total", color: "hsl(var(--chart-1))" },
-                    personnel: { label: "Personnel", color: "hsl(var(--chart-2))" },
-                    operations: { label: "Operations", color: "hsl(var(--chart-3))" },
-                    procurement: { label: "Procurement", color: "hsl(var(--chart-4))" },
-                  }}
-                  className="h-[400px]"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={historicalTrends}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="year" />
-                      <YAxis />
-                      <ChartTooltip
-                        content={({ active, payload, label }) => {
-                          if (active && payload && payload.length) {
-                            return (
-                              <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                <p className="font-medium">FY {label}</p>
-                                {payload.map((entry, index) => (
-                                  <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                    {entry.name}: {formatBillions(entry.value as number)}
-                                  </p>
-                                ))}
-                              </div>
-                            )
-                          }
-                          return null
-                        }}
-                      />
-                      <Line type="monotone" dataKey="total" stroke="var(--color-total)" strokeWidth={3} />
-                      <Line type="monotone" dataKey="personnel" stroke="var(--color-personnel)" strokeWidth={2} />
-                      <Line type="monotone" dataKey="operations" stroke="var(--color-operations)" strokeWidth={2} />
-                      <Line type="monotone" dataKey="procurement" stroke="var(--color-procurement)" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={byCategory}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percentage }) => `${name}: ${percentage}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="amount"
+                    >
+                      {byCategory.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => `$${value}B`} />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Historical Trends</CardTitle>
+                <CardDescription>Defense spending over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={historicalSpending}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip formatter={(value: number) => `$${value}B`} />
+                    <Area type="monotone" dataKey="amount" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Spending Categories Detail</CardTitle>
+              <CardDescription>Breakdown of defense spending by major category</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {byCategory.map((category, index) => (
+                  <div key={category.name} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="font-semibold">{category.name}</span>
+                        <Badge variant="outline">${category.amount}B</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{category.description}</p>
+                      <Progress value={category.percentage} className="mt-2 h-2" />
+                    </div>
+                    <div className="text-right ml-4">
+                      <p className="text-lg font-bold">{category.percentage}%</p>
+                      <p className="text-sm text-muted-foreground">of total</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="branches" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Spending by Military Branch</CardTitle>
+                <CardDescription>Resource allocation across services</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={byBranch}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip formatter={(value: number) => `$${value}B`} />
+                    <Bar dataKey="amount" fill="#8884d8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Branch Comparison</CardTitle>
+                <CardDescription>Relative spending and capabilities</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {byBranch.map((branch) => {
+                  const Icon = branch.icon
+                  return (
+                    <div
+                      key={branch.name}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedBranch === branch.name ? "ring-2 ring-blue-500 bg-blue-50" : "hover:bg-gray-50"
+                      }`}
+                      onClick={() => setSelectedBranch(selectedBranch === branch.name ? null : branch.name)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Icon className="h-6 w-6" style={{ color: branch.color }} />
+                          <div>
+                            <h3 className="font-semibold">{branch.name}</h3>
+                            <p className="text-sm text-muted-foreground">{branch.percentage}% of total</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-bold">${branch.amount}B</p>
+                        </div>
+                      </div>
+                      {selectedBranch === branch.name && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-sm">
+                            {branch.name === "Army" && "Ground forces, personnel-intensive operations"}
+                            {branch.name === "Navy" && "Naval operations, Marine Corps, power projection"}
+                            {branch.name === "Air Force" && "Air superiority, strategic deterrence, airlift"}
+                            {branch.name === "Space Force" && "Space operations, satellite communications"}
+                            {branch.name === "Defense-wide" && "Special operations, intelligence, joint programs"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="programs" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Major Defense Programs</CardTitle>
+              <CardDescription>Largest weapons systems and acquisition programs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {majorPrograms.map((program, index) => (
+                  <div key={program.name} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="text-lg font-bold text-muted-foreground">#{index + 1}</span>
+                        <h3 className="font-semibold">{program.name}</h3>
+                        <Badge variant={program.status === "Active" ? "default" : "secondary"}>{program.status}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{program.branch}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold">${program.cost}B</p>
+                      <p className="text-sm text-muted-foreground">FY 2025</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <Target className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+                  <p className="text-2xl font-bold">$58.4B</p>
+                  <p className="text-sm text-muted-foreground">Top 8 Programs</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <Wrench className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                  <p className="text-2xl font-bold">62%</p>
+                  <p className="text-sm text-muted-foreground">In Development</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <DollarSign className="h-8 w-8 mx-auto mb-2 text-orange-500" />
+                  <p className="text-2xl font-bold">$145B</p>
+                  <p className="text-sm text-muted-foreground">Total Procurement</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="comparison" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Global Military Spending</CardTitle>
+              <CardDescription>How U.S. defense spending compares internationally</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={internationalComparison}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="country" angle={-45} textAnchor="end" height={80} />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => `$${value}B`} />
+                  <Bar dataKey="spending" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Comparisons</CardTitle>
+                <CardDescription>U.S. vs. other major powers</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold mb-2">U.S. vs. China + Russia</h4>
+                  <p className="text-2xl font-bold text-blue-600">$816B vs. $402B</p>
+                  <p className="text-sm text-muted-foreground">U.S. spends 2x more than next two combined</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold mb-2">NATO Allies</h4>
+                  <p className="text-2xl font-bold text-green-600">$178B</p>
+                  <p className="text-sm text-muted-foreground">Combined UK, Germany, France spending</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold mb-2">Per Capita</h4>
+                  <p className="text-2xl font-bold text-purple-600">$2,465</p>
+                  <p className="text-sm text-muted-foreground">U.S. defense spending per person</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Spending as % of GDP</CardTitle>
+                <CardDescription>Defense burden relative to economy size</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {internationalComparison.slice(0, 6).map((country) => (
+                    <div key={country.country} className="flex items-center justify-between">
+                      <span className="font-medium">{country.country}</span>
+                      <div className="flex items-center gap-3">
+                        <Progress value={country.gdpPercent * 10} className="w-20" />
+                        <Badge variant="outline">{country.gdpPercent}%</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="regional" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Regional Defense Priorities</CardTitle>
+              <CardDescription>Geographic allocation of defense resources</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {regionalSpending.map((region, index) => (
+                  <div key={region.region} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold">{region.region}</h3>
+                        <Badge
+                          variant={
+                            region.priority === "High"
+                              ? "default"
+                              : region.priority === "Medium"
+                                ? "secondary"
+                                : "outline"
+                          }
+                        >
+                          {region.priority} Priority
+                        </Badge>
+                      </div>
+                      <Progress value={region.percentage} className="h-2" />
+                    </div>
+                    <div className="text-right ml-4">
+                      <p className="text-xl font-bold">${region.amount}B</p>
+                      <p className="text-sm text-muted-foreground">{region.percentage}%</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Strategic Focus Areas</CardTitle>
+                <CardDescription>Current defense priorities by region</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold text-blue-600 mb-2">Indo-Pacific</h4>
+                  <p className="text-sm">China containment, Taiwan defense, alliance strengthening</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold text-green-600 mb-2">Europe</h4>
+                  <p className="text-sm">NATO support, Ukraine assistance, Russia deterrence</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold text-orange-600 mb-2">Middle East</h4>
+                  <p className="text-sm">Counter-terrorism, Iran containment, partner support</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Force Posture Changes</CardTitle>
+                <CardDescription>Recent shifts in military positioning</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Pacific Deterrence Initiative</span>
+                  <Badge variant="default">+$7.1B</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">European Deterrence Initiative</span>
+                  <Badge variant="default">+$4.2B</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Middle East Drawdown</span>
+                  <Badge variant="secondary">-$2.8B</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Space Force Expansion</span>
+                  <Badge variant="default">+$2.4B</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
