@@ -1,55 +1,36 @@
 export const formatCurrency = (amount: number): string => {
-  if (amount === 0) return "$0"
-  if (Math.abs(amount) >= 1000000000000) {
-    return `$${(amount / 1000000000000).toFixed(1)}T`
-  }
-  if (Math.abs(amount) >= 1000000000) {
-    return `$${(amount / 1000000000).toFixed(1)}B`
-  }
-  if (Math.abs(amount) >= 1000000) {
-    return `$${(amount / 1000000).toFixed(1)}M`
-  }
-  if (Math.abs(amount) >= 1000) {
-    return `$${(amount / 1000).toFixed(0)}K`
-  }
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
+    minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)
 }
 
 export const formatBillions = (amount: number): string => {
-  if (Math.abs(amount) >= 1000000000000) {
-    return `$${(amount / 1000000000000).toFixed(1)}T`
-  }
-  if (Math.abs(amount) >= 1000000000) {
-    return `$${(amount / 1000000000).toFixed(1)}B`
-  }
-  if (Math.abs(amount) >= 1000000) {
-    return `$${(amount / 1000000).toFixed(1)}M`
-  }
-  if (Math.abs(amount) >= 1000) {
-    return `$${(amount / 1000).toFixed(2)}T`
-  }
-  return `$${amount.toFixed(0)}B`
+  return `$${(amount / 1000).toFixed(1)}T`
 }
 
 export const formatPercent = (value: number): string => {
   return `${value.toFixed(1)}%`
 }
 
-export const formatLargeNumber = (amount: number): string => {
-  if (Math.abs(amount) >= 1000000000) {
-    return `${(amount / 1000000000).toFixed(1)}T`
+export const formatPercentage = (value: number): string => {
+  return `${(value * 100).toFixed(1)}%`
+}
+
+export const formatLargeNumber = (num: number): string => {
+  if (num >= 1000000000000) {
+    return `$${(num / 1000000000000).toFixed(1)}T`
+  } else if (num >= 1000000000) {
+    return `$${(num / 1000000000).toFixed(1)}B`
+  } else if (num >= 1000000) {
+    return `$${(num / 1000000).toFixed(1)}M`
+  } else if (num >= 1000) {
+    return `$${(num / 1000).toFixed(1)}K`
+  } else {
+    return `$${num.toFixed(0)}`
   }
-  if (Math.abs(amount) >= 1000000) {
-    return `${(amount / 1000000).toFixed(1)}B`
-  }
-  if (Math.abs(amount) >= 1000) {
-    return `${(amount / 1000).toFixed(1)}M`
-  }
-  return amount.toLocaleString("en-US")
 }
 
 export const formatNumber = (value: number): string => {
@@ -57,6 +38,11 @@ export const formatNumber = (value: number): string => {
 }
 
 export const calculatePercentChange = (oldValue: number, newValue: number): number => {
+  if (oldValue === 0) return newValue > 0 ? 100 : 0
+  return ((newValue - oldValue) / oldValue) * 100
+}
+
+export const calculatePercentageChange = (oldValue: number, newValue: number): number => {
   if (oldValue === 0) return newValue > 0 ? 100 : 0
   return ((newValue - oldValue) / oldValue) * 100
 }
@@ -146,6 +132,14 @@ export const projectFutureDeficit = (
   return projections
 }
 
+export const formatDeficit = (amount: number): string => {
+  if (amount >= 0) {
+    return `+$${formatLargeNumber(amount)} Surplus`
+  } else {
+    return `-$${formatLargeNumber(Math.abs(amount))} Deficit`
+  }
+}
+
 // Legislative tracking helpers
 export const calculatePassageProbability = (
   houseSupport: number,
@@ -200,6 +194,10 @@ export const calculateTaxCutBenefitByIncome = (income: number, currentRate: numb
 
 export const calculateCorporateTaxImpact = (corporateRevenue: number, currentRate: number, newRate: number): number => {
   return corporateRevenue * (currentRate - newRate)
+}
+
+export const formatTaxRate = (rate: number): string => {
+  return `${(rate * 100).toFixed(1)}%`
 }
 
 // Climate and energy helpers

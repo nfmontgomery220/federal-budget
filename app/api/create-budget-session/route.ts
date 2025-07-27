@@ -1,19 +1,25 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-admin"
 
-/**
- * POST /api/create-budget-session
- * Body: { }
- * Returns: { id: string }
- */
-export async function POST() {
-  // Insert an empty row – default values populate created_at & id
-  const { data, error } = await supabaseAdmin.from("budget_sessions").insert({}).select("id").single()
+export async function POST(request: NextRequest) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("budget_sessions")
+      .insert({
+        created_at: new Date().toISOString(),
+        completed: false,
+      })
+      .select("id")
+      .single()
 
-  if (error) {
-    console.error("Supabase insert error:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error("Database error:", error)
+      return NextResponse.json({ error: "Failed to create session" }, { status: 500 })
+    }
+
+    return NextResponse.json({ sessionId: data.id })
+  } catch (error) {
+    console.error("API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
-
-  return NextResponse.json({ id: data.id })
 }

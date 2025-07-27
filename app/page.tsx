@@ -1,7 +1,25 @@
 "use client"
 
 import { useState } from "react"
-import FederalBudgetDashboard from "@/federal-budget-dashboard"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Calculator,
+  BarChart3,
+  TrendingUp,
+  Users,
+  FileText,
+  AlertTriangle,
+  Building2,
+  PieChart,
+  Target,
+  Gavel,
+  Shield,
+  Heart,
+  Briefcase,
+  Activity,
+} from "lucide-react"
 import BalancedBudgetBuilder from "@/balanced-budget-builder"
 import BudgetAnalyticsDashboard from "@/budget-analytics-dashboard"
 import TaxDesignCalculator from "@/tax-design-calculator"
@@ -12,12 +30,12 @@ import StateTaxAnalysis from "@/state-tax-analysis"
 import RevenueBreakdown from "@/revenue-breakdown"
 import TaxPolicyScenarios from "@/tax-policy-scenarios"
 import GunsVsButterAnalysis from "@/guns-vs-butter-analysis"
-import FullProposalGenerator from "@/full-proposal-generator"
 import SocialSecurityMedicareAnalysis from "@/social-security-medicare-analysis"
 import SocialSecuritySolutions from "@/social-security-solutions"
+import FullProposalGenerator from "@/full-proposal-generator"
 import LegislativeUpdateSystem from "@/legislative-update-system"
 
-type ActiveView =
+type ActiveTool =
   | "dashboard"
   | "budget-builder"
   | "analytics"
@@ -28,49 +46,346 @@ type ActiveView =
   | "state-tax"
   | "revenue-breakdown"
   | "tax-scenarios"
-  | "guns-butter"
-  | "full-proposal"
+  | "guns-vs-butter"
   | "social-security"
   | "ss-solutions"
+  | "full-proposal"
   | "legislative-updates"
 
-export default function Home() {
-  const [activeView, setActiveView] = useState<ActiveView>("dashboard")
+export default function HomePage() {
+  const [activeTool, setActiveTool] = useState<ActiveTool>("dashboard")
 
-  const renderActiveView = () => {
-    switch (activeView) {
-      case "budget-builder":
-        return <BalancedBudgetBuilder onBack={() => setActiveView("dashboard")} />
-      case "analytics":
-        return <BudgetAnalyticsDashboard onBack={() => setActiveView("dashboard")} />
-      case "tax-design":
-        return <TaxDesignCalculator onBack={() => setActiveView("dashboard")} />
-      case "military-spending":
-        return <MilitarySpendingBreakdown onBack={() => setActiveView("dashboard")} />
-      case "revenue-optimization":
-        return <RevenueOptimization onBack={() => setActiveView("dashboard")} />
-      case "income-impact":
-        return <IncomeBracketImpactAnalyzer onBack={() => setActiveView("dashboard")} />
-      case "state-tax":
-        return <StateTaxAnalysis onBack={() => setActiveView("dashboard")} />
-      case "revenue-breakdown":
-        return <RevenueBreakdown onBack={() => setActiveView("dashboard")} />
-      case "tax-scenarios":
-        return <TaxPolicyScenarios onBack={() => setActiveView("dashboard")} />
-      case "guns-butter":
-        return <GunsVsButterAnalysis onBack={() => setActiveView("dashboard")} />
-      case "full-proposal":
-        return <FullProposalGenerator onBack={() => setActiveView("dashboard")} />
-      case "social-security":
-        return <SocialSecurityMedicareAnalysis onBack={() => setActiveView("dashboard")} />
-      case "ss-solutions":
-        return <SocialSecuritySolutions onBack={() => setActiveView("dashboard")} />
-      case "legislative-updates":
-        return <LegislativeUpdateSystem onBack={() => setActiveView("dashboard")} />
-      default:
-        return <FederalBudgetDashboard onNavigate={setActiveView} />
-    }
+  const handleToolSelect = (tool: ActiveTool) => {
+    setActiveTool(tool)
   }
 
-  return <main className="min-h-screen bg-gray-50">{renderActiveView()}</main>
+  const handleBackToDashboard = () => {
+    setActiveTool("dashboard")
+  }
+
+  if (activeTool === "budget-builder") {
+    return <BalancedBudgetBuilder onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "analytics") {
+    return <BudgetAnalyticsDashboard onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "tax-design") {
+    return <TaxDesignCalculator onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "military-spending") {
+    return <MilitarySpendingBreakdown onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "revenue-optimization") {
+    return <RevenueOptimization onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "income-impact") {
+    return <IncomeBracketImpactAnalyzer onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "state-tax") {
+    return <StateTaxAnalysis onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "revenue-breakdown") {
+    return <RevenueBreakdown onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "tax-scenarios") {
+    return <TaxPolicyScenarios onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "guns-vs-butter") {
+    return <GunsVsButterAnalysis onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "social-security") {
+    return <SocialSecurityMedicareAnalysis onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "ss-solutions") {
+    return <SocialSecuritySolutions onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "full-proposal") {
+    return <FullProposalGenerator onBack={handleBackToDashboard} />
+  }
+
+  if (activeTool === "legislative-updates") {
+    return <LegislativeUpdateSystem onBack={handleBackToDashboard} />
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Federal Budget Analysis Tool</h1>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            Comprehensive tools for analyzing the federal budget, exploring policy scenarios, and understanding fiscal
+            impacts in the post-"One Big Beautiful Bill Act" era.
+          </p>
+        </div>
+
+        {/* Crisis Alert */}
+        <Alert className="mb-8 border-red-200 bg-red-50">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            <strong>🚨 2025 Fiscal Crisis Alert</strong>
+            <br />
+            The "One Big Beautiful Bill Act" signed on July 4th, 2025 has created a $2.65 trillion deficit. Use these
+            tools to explore solutions and understand the fiscal challenges ahead.
+          </AlertDescription>
+        </Alert>
+
+        {/* Main Tools Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {/* Budget Builder */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-800">
+                <Calculator className="h-5 w-5" />
+                Budget Builder
+              </CardTitle>
+              <CardDescription className="text-blue-700">
+                Interactive tool to balance the 2025 federal budget through spending cuts and revenue increases
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => handleToolSelect("budget-builder")}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                Start Building Budget
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Analytics Dashboard */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-800">
+                <BarChart3 className="h-5 w-5" />
+                Analytics Dashboard
+              </CardTitle>
+              <CardDescription className="text-green-700">
+                Real-time insights from user budget exercises and policy preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => handleToolSelect("analytics")} className="w-full bg-green-600 hover:bg-green-700">
+                View Analytics
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Tax Design Calculator */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Tax Design Calculator
+              </CardTitle>
+              <CardDescription>Design optimal tax policies and analyze revenue potential</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => handleToolSelect("tax-design")} className="w-full bg-gray-900 hover:bg-gray-800">
+                Design Tax Policy
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Military Spending Analysis */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Military Spending Analysis
+              </CardTitle>
+              <CardDescription>Detailed breakdown of defense spending by branch and category</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => handleToolSelect("military-spending")}
+                className="w-full bg-gray-900 hover:bg-gray-800"
+              >
+                Analyze Defense Spending
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Revenue Optimization */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Revenue Optimization
+              </CardTitle>
+              <CardDescription>Find the most efficient ways to increase federal revenue</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => handleToolSelect("revenue-optimization")}
+                className="w-full bg-gray-900 hover:bg-gray-800"
+              >
+                Optimize Revenue
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Income Impact Analysis */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Income Impact Analysis
+              </CardTitle>
+              <CardDescription>Analyze how tax changes affect different income brackets</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => handleToolSelect("income-impact")}
+                className="w-full bg-gray-900 hover:bg-gray-800"
+              >
+                Analyze Income Impact
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Additional Analysis Tools */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-center mb-8">Additional Analysis Tools</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              variant="outline"
+              onClick={() => handleToolSelect("state-tax")}
+              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+            >
+              <Building2 className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium text-sm">State Tax Analysis</div>
+                <div className="text-xs text-gray-600">Regional tax impacts</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => handleToolSelect("revenue-breakdown")}
+              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+            >
+              <PieChart className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium text-sm">Revenue Breakdown</div>
+                <div className="text-xs text-gray-600">Tax source analysis</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => handleToolSelect("tax-scenarios")}
+              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+            >
+              <Calculator className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium text-sm">Tax Scenarios</div>
+                <div className="text-xs text-gray-600">Policy comparisons</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => handleToolSelect("guns-vs-butter")}
+              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+            >
+              <Briefcase className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium text-sm">Guns vs Butter</div>
+                <div className="text-xs text-gray-600">Defense vs social spending</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => handleToolSelect("social-security")}
+              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+            >
+              <Heart className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium text-sm">Social Security Analysis</div>
+                <div className="text-xs text-gray-600">Entitlement sustainability</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => handleToolSelect("ss-solutions")}
+              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+            >
+              <Activity className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium text-sm">SS Solutions</div>
+                <div className="text-xs text-gray-600">Reform options</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => handleToolSelect("full-proposal")}
+              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+            >
+              <FileText className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium text-sm">Full Proposal</div>
+                <div className="text-xs text-gray-600">Complete policy package</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => handleToolSelect("legislative-updates")}
+              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+            >
+              <Gavel className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium text-sm">Legislative Updates</div>
+                <div className="text-xs text-gray-600">Real-time tracking</div>
+              </div>
+            </Button>
+          </div>
+        </div>
+
+        {/* 2025 Fiscal Reality */}
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-6">2025 Fiscal Reality</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold text-red-600 mb-2">$2.65T</div>
+                <div className="text-red-700 font-medium">Annual Deficit</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold text-blue-600 mb-2">$7.2T</div>
+                <div className="text-blue-700 font-medium">Total Spending</div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold text-green-600 mb-2">$4.55T</div>
+                <div className="text-green-700 font-medium">Total Revenue</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }

@@ -1,46 +1,30 @@
 -- Create budget_sessions table
 CREATE TABLE IF NOT EXISTS budget_sessions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_agent TEXT,
-  referrer TEXT,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  completed_at TIMESTAMP WITH TIME ZONE,
-  duration_seconds INTEGER
+  completed BOOLEAN DEFAULT FALSE,
+  scenario_name TEXT,
+  final_balance DECIMAL,
+  total_spending DECIMAL,
+  total_revenue DECIMAL
 );
 
--- Create budget_configurations table
-CREATE TABLE IF NOT EXISTS budget_configurations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  session_id UUID REFERENCES budget_sessions(id),
-  fiscal_year INTEGER NOT NULL,
-  scenario_name TEXT NOT NULL,
-  scenario_type TEXT NOT NULL,
-  final_balance NUMERIC NOT NULL,
-  achieved_balance BOOLEAN NOT NULL,
-  total_spending_cuts NUMERIC NOT NULL,
-  total_revenue_increases NUMERIC NOT NULL,
-  spending_cuts JSONB NOT NULL,
-  revenue_increases JSONB NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create policy_choices table
-CREATE TABLE IF NOT EXISTS policy_choices (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  config_id UUID REFERENCES budget_configurations(id),
+-- Create budget_configs table
+CREATE TABLE IF NOT EXISTS budget_configs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id UUID REFERENCES budget_sessions(id) ON DELETE CASCADE,
   category TEXT NOT NULL,
-  policy_type TEXT NOT NULL,
-  amount NUMERIC NOT NULL,
+  value DECIMAL NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create user_feedback table
 CREATE TABLE IF NOT EXISTS user_feedback (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  session_id UUID REFERENCES budget_sessions(id),
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id UUID REFERENCES budget_sessions(id) ON DELETE CASCADE,
   political_affiliation TEXT,
   income_bracket TEXT,
-  difficulty_rating INTEGER,
+  difficulty_rating INTEGER CHECK (difficulty_rating >= 1 AND difficulty_rating <= 5),
   comments TEXT,
   would_support_plan BOOLEAN,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -48,16 +32,21 @@ CREATE TABLE IF NOT EXISTS user_feedback (
 
 -- Create user_interactions table
 CREATE TABLE IF NOT EXISTS user_interactions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  session_id UUID REFERENCES budget_sessions(id),
-  action_type TEXT NOT NULL,
-  target TEXT NOT NULL,
-  value TEXT,
-  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  session_id UUID REFERENCES budget_sessions(id) ON DELETE CASCADE,
+  action TEXT NOT NULL,
+  details JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_budget_configurations_session_id ON budget_configurations(session_id);
-CREATE INDEX IF NOT EXISTS idx_policy_choices_config_id ON policy_choices(config_id);
-CREATE INDEX IF NOT EXISTS idx_user_feedback_session_id ON user_feedback(session_id);
-CREATE INDEX IF NOT EXISTS idx_user_interactions_session_id ON user_interactions(session_id);
+-- Enable Row Level Security
+ALTER TABLE budget_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE budget_configs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_feedback ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_interactions ENABLE ROW LEVEL SECURITY;
+
+-- Create policies (allow all operations for now - adjust as needed)
+CREATE POLICY "Allow all operations on budget_sessions" ON budget_sessions FOR ALL USING (true);
+CREATE POLICY "Allow all operations on budget_configs" ON budget_configs FOR ALL USING (true);
+CREATE POLICY "Allow all operations on user_feedback" ON user_feedback FOR ALL USING (true);
+CREATE POLICY "Allow all operations on user_interactions" ON user_interactions FOR ALL USING (true);

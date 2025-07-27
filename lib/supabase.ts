@@ -1,3 +1,10 @@
+import { createClient } from "@supabase/supabase-js"
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
 // This is a mock implementation of Supabase client for the federal budget tool
 // In a real application, this would connect to an actual Supabase instance
 
@@ -54,79 +61,79 @@ export interface UserInteraction {
   timestamp: string
 }
 
-class SupabaseClient {
-  private tables: {
-    budget_sessions: BudgetSession[]
-    budget_configurations: BudgetConfig[]
-    policy_choices: PolicyChoice[]
-    user_feedback: UserFeedback[]
-    user_interactions: UserInteraction[]
-  }
+// class SupabaseClient {
+//   private tables: {
+//     budget_sessions: BudgetSession[]
+//     budget_configurations: BudgetConfig[]
+//     policy_choices: PolicyChoice[]
+//     user_feedback: UserFeedback[]
+//     user_interactions: UserInteraction[]
+//   }
 
-  constructor() {
-    this.tables = {
-      budget_sessions: [],
-      budget_configurations: [],
-      policy_choices: [],
-      user_feedback: [],
-      user_interactions: [],
-    }
-  }
+//   constructor() {
+//     this.tables = {
+//       budget_sessions: [],
+//       budget_configurations: [],
+//       policy_choices: [],
+//       user_feedback: [],
+//       user_interactions: [],
+//     }
+//   }
 
-  from(tableName: string) {
-    return {
-      select: (columns = "*") => {
-        return {
-          order: (column: string, { ascending }: { ascending: boolean }) => {
-            return {
-              data: this.tables[tableName as keyof typeof this.tables] || [],
-              error: null,
-            }
-          },
-          data: this.tables[tableName as keyof typeof this.tables] || [],
-          error: null,
-        }
-      },
-      insert: (data: any) => {
-        const id = `id_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-        const timestamp = new Date().toISOString()
+//   from(tableName: string) {
+//     return {
+//       select: (columns = "*") => {
+//         return {
+//           order: (column: string, { ascending }: { ascending: boolean }) => {
+//             return {
+//               data: this.tables[tableName as keyof typeof this.tables] || [],
+//               error: null,
+//             }
+//           },
+//           data: this.tables[tableName as keyof typeof this.tables] || [],
+//           error: null,
+//         }
+//       },
+//       insert: (data: any) => {
+//         const id = `id_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+//         const timestamp = new Date().toISOString()
 
-        const newItem = {
-          id,
-          created_at: timestamp,
-          ...data,
-        }
+//         const newItem = {
+//           id,
+//           created_at: timestamp,
+//           ...data,
+//         }
 
-        // @ts-ignore - Dynamic table access
-        this.tables[tableName].push(newItem)
+//         // @ts-ignore - Dynamic table access
+//         this.tables[tableName].push(newItem)
 
-        return {
-          data: { id },
-          error: null,
-          select: (columns: string) => {
-            return {
-              single: () => {
-                return {
-                  data: newItem,
-                  error: null,
-                }
-              },
-            }
-          },
-        }
-      },
-      update: (data: any) => {
-        return {
-          eq: (column: string, value: any) => {
-            return {
-              data: null,
-              error: null,
-            }
-          },
-        }
-      },
-    }
-  }
-}
+//         return {
+//           data: { id },
+//           error: null,
+//           select: (columns: string) => {
+//             return {
+//               single: () => {
+//                 return {
+//                   data: newItem,
+//                   error: null,
+//                 }
+//               },
+//             }
+//           },
+//         }
+//       },
+//       update: (data: any) => {
+//         return {
+//           eq: (column: string, value: any) => {
+//             return {
+//               data: null,
+//               error: null,
+//             }
+//           },
+//         }
+//       },
+//     }
+//   }
+// }
 
-export const supabase = new SupabaseClient()
+// export const supabase = new SupabaseClient()

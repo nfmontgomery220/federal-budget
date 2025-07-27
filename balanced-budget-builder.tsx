@@ -1,643 +1,565 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, Target, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, DollarSign } from "lucide-react"
-import { UserFeedbackModal } from "@/components/user-feedback-modal"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  ArrowLeft,
+  TrendingUp,
+  CheckCircle,
+  AlertTriangle,
+  DollarSign,
+  Users,
+  Shield,
+  Building2,
+  Heart,
+  GraduationCap,
+} from "lucide-react"
+import { formatLargeNumber, formatPercentage } from "@/utils/format-helpers"
 import { createBudgetSession, saveBudgetConfig, completeSession, trackInteraction } from "@/lib/budget-analytics"
-import { formatBillions, formatPercent } from "@/utils/format-helpers"
+import { UserFeedbackModal } from "@/components/user-feedback-modal"
 
 interface BalancedBudgetBuilderProps {
   onBack: () => void
 }
 
-// 2025 Post-"One Big Beautiful Bill Act" Budget Data
-const BUDGET_2025 = {
-  totalSpending: 7200, // $7.2T total spending
-  totalRevenue: 4550, // $4.55T total revenue
-  deficit: 2650, // $2.65T deficit
-
-  // Major spending categories (in billions)
-  spending: {
-    socialSecurity: 1400,
-    medicare: 1100,
-    medicaid: 650,
-    defense: 850,
-    interest: 900,
-    veterans: 350,
-    education: 280,
-    transportation: 180,
-    agriculture: 150,
-    justice: 70,
-    energy: 60,
-    nasa: 25,
-    epa: 12,
-    other: 1163,
-  },
-
-  // Revenue sources (in billions)
-  revenue: {
-    individualIncome: 2100,
-    payrollTax: 1650,
-    corporateIncome: 450,
-    customsDuties: 80,
-    exciseTaxes: 65,
-    estateTax: 25,
-    other: 180,
-  },
-}
-
-const PREBUILT_SCENARIOS = {
-  progressive: {
-    name: "Progressive Approach",
-    description: "Higher taxes on wealthy, maintain social programs",
-    spendingCuts: {
-      defense: 200,
-      other: 100,
-    },
-    revenueIncreases: {
-      wealthTax: 400,
-      corporateIncome: 300,
-      capitalGains: 200,
-      individualIncome: 250,
-    },
-  },
-  conservative: {
-    name: "Conservative Approach",
-    description: "Reduce spending, minimal tax increases",
-    spendingCuts: {
-      socialSecurity: 150,
-      medicare: 200,
-      medicaid: 150,
-      education: 100,
-      other: 200,
-    },
-    revenueIncreases: {
-      economicGrowth: 300,
-    },
-  },
-  centrist: {
-    name: "Centrist Compromise",
-    description: "Balanced mix of cuts and revenue increases",
-    spendingCuts: {
-      defense: 100,
-      medicare: 100,
-      other: 150,
-    },
-    revenueIncreases: {
-      vatTax: 500,
-      corporateIncome: 150,
-      closingLoopholes: 200,
-    },
-  },
+interface BudgetItem {
+  id: string
+  name: string
+  current: number
+  proposed: number
+  min: number
+  max: number
+  icon: React.ReactNode
+  description: string
+  category: "spending" | "revenue"
+  subcategory?: string
 }
 
 export default function BalancedBudgetBuilder({ onBack }: BalancedBudgetBuilderProps) {
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [sessionStartTime] = useState(Date.now())
-  const [selectedScenario, setSelectedScenario] = useState<string>("")
-  const [customMode, setCustomMode] = useState(false)
+  const [sessionId, setSessionId] = useState<string>("")
+  const [activeTab, setActiveTab] = useState("spending")
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+  const [selectedScenario, setSelectedScenario] = useState("")
 
-  // Spending cuts (in billions)
-  const [spendingCuts, setSpendingCuts] = useState({
-    socialSecurity: 0,
-    medicare: 0,
-    medicaid: 0,
-    defense: 0,
-    veterans: 0,
-    education: 0,
-    transportation: 0,
-    agriculture: 0,
-    other: 0,
-  })
+  // 2025 baseline budget items (post-"One Big Beautiful Bill Act")
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([
+    // Spending Categories
+    {
+      id: "defense",
+      name: "Defense Spending",
+      current: 886,
+      proposed: 886,
+      min: 600,
+      max: 1000,
+      icon: <Shield className="h-5 w-5" />,
+      description: "Military personnel, operations, procurement, and R&D",
+      category: "spending",
+      subcategory: "discretionary",
+    },
+    {
+      id: "social_security",
+      name: "Social Security",
+      current: 1347,
+      proposed: 1347,
+      min: 1200,
+      max: 1400,
+      icon: <Users className="h-5 w-5" />,
+      description: "Retirement, disability, and survivor benefits",
+      category: "spending",
+      subcategory: "mandatory",
+    },
+    {
+      id: "medicare",
+      name: "Medicare",
+      current: 1019,
+      proposed: 1019,
+      min: 900,
+      max: 1100,
+      icon: <Heart className="h-5 w-5" />,
+      description: "Healthcare for seniors and disabled",
+      category: "spending",
+      subcategory: "mandatory",
+    },
+    {
+      id: "medicaid",
+      name: "Medicaid",
+      current: 616,
+      proposed: 616,
+      min: 500,
+      max: 700,
+      icon: <Heart className="h-5 w-5" />,
+      description: "Healthcare for low-income individuals and families",
+      category: "spending",
+      subcategory: "mandatory",
+    },
+    {
+      id: "interest",
+      name: "Interest on Debt",
+      current: 640,
+      proposed: 640,
+      min: 640,
+      max: 640,
+      icon: <TrendingUp className="h-5 w-5" />,
+      description: "Interest payments on national debt (fixed)",
+      category: "spending",
+      subcategory: "mandatory",
+    },
+    {
+      id: "veterans",
+      name: "Veterans Affairs",
+      current: 303,
+      proposed: 303,
+      min: 250,
+      max: 350,
+      icon: <Shield className="h-5 w-5" />,
+      description: "Healthcare, disability, and benefits for veterans",
+      category: "spending",
+      subcategory: "discretionary",
+    },
+    {
+      id: "education",
+      name: "Education",
+      current: 80,
+      proposed: 80,
+      min: 50,
+      max: 120,
+      icon: <GraduationCap className="h-5 w-5" />,
+      description: "Federal education programs and student aid",
+      category: "spending",
+      subcategory: "discretionary",
+    },
+    {
+      id: "other_discretionary",
+      name: "Other Discretionary",
+      current: 309,
+      proposed: 309,
+      min: 200,
+      max: 400,
+      icon: <Building2 className="h-5 w-5" />,
+      description: "Transportation, justice, science, and other programs",
+      category: "spending",
+      subcategory: "discretionary",
+    },
 
-  // Revenue increases (in billions)
-  const [revenueIncreases, setRevenueIncreases] = useState({
-    individualIncome: 0,
-    corporateIncome: 0,
-    wealthTax: 0,
-    vatTax: 0,
-    carbonTax: 0,
-    financialTransaction: 0,
-    capitalGains: 0,
-    closingLoopholes: 0,
-    economicGrowth: 0,
-  })
+    // Revenue Categories
+    {
+      id: "individual_income",
+      name: "Individual Income Tax",
+      current: 2044,
+      proposed: 2044,
+      min: 1800,
+      max: 2800,
+      icon: <Users className="h-5 w-5" />,
+      description: "Personal income tax from individuals",
+      category: "revenue",
+    },
+    {
+      id: "payroll_tax",
+      name: "Payroll Tax",
+      current: 1484,
+      proposed: 1484,
+      min: 1400,
+      max: 1800,
+      icon: <Building2 className="h-5 w-5" />,
+      description: "Social Security and Medicare taxes",
+      category: "revenue",
+    },
+    {
+      id: "corporate_income",
+      name: "Corporate Income Tax",
+      current: 420,
+      proposed: 420,
+      min: 300,
+      max: 800,
+      icon: <Building2 className="h-5 w-5" />,
+      description: "Tax on corporate profits",
+      category: "revenue",
+    },
+    {
+      id: "customs_duties",
+      name: "Customs Duties",
+      current: 365,
+      proposed: 365,
+      min: 80,
+      max: 500,
+      icon: <DollarSign className="h-5 w-5" />,
+      description: "Tariffs and import duties",
+      category: "revenue",
+    },
+    {
+      id: "other_revenue",
+      name: "Other Revenue",
+      current: 237,
+      proposed: 237,
+      min: 200,
+      max: 400,
+      icon: <DollarSign className="h-5 w-5" />,
+      description: "Estate taxes, fees, and other sources",
+      category: "revenue",
+    },
+  ])
 
-  // Initialize session
   useEffect(() => {
-    const initSession = async () => {
-      const id = await createBudgetSession()
-      if (id) {
-        setSessionId(id)
-      }
-    }
-    initSession()
+    initializeSession()
   }, [])
 
-  // Track interactions
-  const trackUserAction = (action: string, target: string, value?: string) => {
-    if (sessionId) {
-      trackInteraction(sessionId, action, target, value)
+  const initializeSession = async () => {
+    try {
+      const id = await createBudgetSession()
+      setSessionId(id)
+      await trackInteraction(id, "started_budget_builder")
+    } catch (error) {
+      console.error("Error initializing session:", error)
     }
   }
 
-  // Apply prebuilt scenario
-  const applyScenario = (scenarioKey: string) => {
-    const scenario = PREBUILT_SCENARIOS[scenarioKey as keyof typeof PREBUILT_SCENARIOS]
-    if (!scenario) return
+  const updateBudgetItem = async (id: string, newValue: number) => {
+    setBudgetItems((prev) => prev.map((item) => (item.id === id ? { ...item, proposed: newValue } : item)))
 
-    setSelectedScenario(scenarioKey)
-    setCustomMode(false)
-
-    // Reset all values
-    setSpendingCuts({
-      socialSecurity: 0,
-      medicare: 0,
-      medicaid: 0,
-      defense: 0,
-      veterans: 0,
-      education: 0,
-      transportation: 0,
-      agriculture: 0,
-      other: 0,
-    })
-
-    setRevenueIncreases({
-      individualIncome: 0,
-      corporateIncome: 0,
-      wealthTax: 0,
-      vatTax: 0,
-      carbonTax: 0,
-      financialTransaction: 0,
-      capitalGains: 0,
-      closingLoopholes: 0,
-      economicGrowth: 0,
-    })
-
-    // Apply scenario values
-    Object.entries(scenario.spendingCuts).forEach(([key, value]) => {
-      setSpendingCuts((prev) => ({ ...prev, [key]: value }))
-    })
-
-    Object.entries(scenario.revenueIncreases).forEach(([key, value]) => {
-      setRevenueIncreases((prev) => ({ ...prev, [key]: value }))
-    })
-
-    trackUserAction("apply_scenario", scenarioKey)
+    if (sessionId) {
+      await saveBudgetConfig(sessionId, id, newValue)
+      await trackInteraction(sessionId, "adjusted_budget_item", { id, value: newValue })
+    }
   }
 
-  // Switch to custom mode
-  const enableCustomMode = () => {
-    setCustomMode(true)
+  const calculateTotals = () => {
+    const spending = budgetItems
+      .filter((item) => item.category === "spending")
+      .reduce((sum, item) => sum + item.proposed, 0)
+
+    const revenue = budgetItems
+      .filter((item) => item.category === "revenue")
+      .reduce((sum, item) => sum + item.proposed, 0)
+
+    const deficit = revenue - spending
+
+    return { spending, revenue, deficit }
+  }
+
+  const applyScenario = async (scenario: string) => {
+    setSelectedScenario(scenario)
+
+    let adjustments: Record<string, number> = {}
+
+    switch (scenario) {
+      case "progressive":
+        adjustments = {
+          defense: 750,
+          individual_income: 2400,
+          corporate_income: 600,
+          other_discretionary: 280,
+        }
+        break
+      case "conservative":
+        adjustments = {
+          defense: 950,
+          social_security: 1300,
+          medicare: 980,
+          medicaid: 580,
+          education: 60,
+          individual_income: 2200,
+          corporate_income: 350,
+        }
+        break
+      case "balanced":
+        adjustments = {
+          defense: 820,
+          social_security: 1320,
+          medicare: 1000,
+          individual_income: 2200,
+          corporate_income: 500,
+          other_discretionary: 290,
+        }
+        break
+    }
+
+    setBudgetItems((prev) =>
+      prev.map((item) => ({
+        ...item,
+        proposed: adjustments[item.id] || item.proposed,
+      })),
+    )
+
+    if (sessionId) {
+      await trackInteraction(sessionId, "applied_scenario", { scenario })
+    }
+  }
+
+  const resetToBaseline = async () => {
+    setBudgetItems((prev) => prev.map((item) => ({ ...item, proposed: item.current })))
     setSelectedScenario("")
-    trackUserAction("enable_custom_mode", "custom")
+
+    if (sessionId) {
+      await trackInteraction(sessionId, "reset_to_baseline")
+    }
   }
 
-  // Calculate totals
-  const totalSpendingCuts = Object.values(spendingCuts).reduce((sum, cut) => sum + cut, 0)
-  const totalRevenueIncreases = Object.values(revenueIncreases).reduce((sum, increase) => sum + increase, 0)
-  const newDeficit = BUDGET_2025.deficit - totalSpendingCuts - totalRevenueIncreases
-  const isBalanced = newDeficit <= 0
-
-  // Handle completion
   const handleComplete = async () => {
-    if (!sessionId) return
+    const { spending, revenue, deficit } = calculateTotals()
 
-    const duration = Math.round((Date.now() - sessionStartTime) / 1000)
-    const scenarioName = selectedScenario
-      ? PREBUILT_SCENARIOS[selectedScenario as keyof typeof PREBUILT_SCENARIOS].name
-      : "Custom Approach"
-
-    await Promise.all([
-      saveBudgetConfig(
-        sessionId,
-        2025,
-        scenarioName,
-        selectedScenario ? "prebuilt" : "custom",
-        -newDeficit, // Convert to positive for surplus, negative for deficit
-        totalSpendingCuts,
-        totalRevenueIncreases,
-        spendingCuts,
-        revenueIncreases,
-      ),
-      completeSession(sessionId, duration),
-    ])
+    if (sessionId) {
+      await completeSession(sessionId, selectedScenario || "custom", deficit, spending, revenue)
+    }
 
     setShowFeedbackModal(true)
   }
 
-  const getStatusColor = () => {
-    if (isBalanced) return "text-green-600"
-    if (newDeficit < BUDGET_2025.deficit * 0.5) return "text-yellow-600"
-    return "text-red-600"
-  }
+  const { spending, revenue, deficit } = calculateTotals()
+  const isBalanced = deficit >= 0
+  const deficitReduction = 2650 + deficit // Compared to 2025 baseline
 
-  const getStatusIcon = () => {
-    if (isBalanced) return <CheckCircle className="h-5 w-5 text-green-600" />
-    if (newDeficit < BUDGET_2025.deficit * 0.5) return <Target className="h-5 w-5 text-yellow-600" />
-    return <AlertTriangle className="h-5 w-5 text-red-600" />
-  }
+  const spendingItems = budgetItems.filter((item) => item.category === "spending")
+  const revenueItems = budgetItems.filter((item) => item.category === "revenue")
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        <h1 className="text-3xl font-bold">Balance the 2025 Federal Budget</h1>
-      </div>
-
-      {/* Current Status */}
-      <Card className="border-2">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {getStatusIcon()}
-            Budget Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{formatBillions(BUDGET_2025.deficit)}</div>
-              <div className="text-sm text-muted-foreground">Starting Deficit</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{formatBillions(totalSpendingCuts)}</div>
-              <div className="text-sm text-muted-foreground">Spending Cuts</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{formatBillions(totalRevenueIncreases)}</div>
-              <div className="text-sm text-muted-foreground">Revenue Increases</div>
-            </div>
-            <div className="text-center">
-              <div className={`text-2xl font-bold ${getStatusColor()}`}>
-                {newDeficit > 0 ? formatBillions(newDeficit) : formatBillions(Math.abs(newDeficit))}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {newDeficit > 0 ? "Remaining Deficit" : "Budget Surplus"}
-              </div>
-            </div>
-          </div>
-          <div className="mt-4">
-            <Progress
-              value={Math.min(((BUDGET_2025.deficit - newDeficit) / BUDGET_2025.deficit) * 100, 100)}
-              className="h-3"
-            />
-            <div className="text-center text-sm text-muted-foreground mt-2">
-              {formatPercent(Math.min(((BUDGET_2025.deficit - newDeficit) / BUDGET_2025.deficit) * 100, 100))}
-              progress toward balance
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Scenario Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Choose Your Approach</CardTitle>
-          <CardDescription>Start with a prebuilt scenario or create your own custom solution</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {Object.entries(PREBUILT_SCENARIOS).map(([key, scenario]) => (
-              <Card
-                key={key}
-                className={`cursor-pointer transition-all ${
-                  selectedScenario === key ? "ring-2 ring-blue-500 bg-blue-50" : "hover:shadow-md"
-                }`}
-                onClick={() => applyScenario(key)}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{scenario.name}</CardTitle>
-                  <CardDescription className="text-sm">{scenario.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-xs space-y-1">
-                    <div>Cuts: {formatBillions(Object.values(scenario.spendingCuts).reduce((a, b) => a + b, 0))}</div>
-                    <div>
-                      Revenue: {formatBillions(Object.values(scenario.revenueIncreases).reduce((a, b) => a + b, 0))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <Button variant="outline" onClick={enableCustomMode} className="w-full bg-transparent">
-            <DollarSign className="h-4 w-4 mr-2" />
-            Create Custom Solution
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="outline" onClick={onBack} className="flex items-center gap-2 bg-transparent">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
           </Button>
-        </CardContent>
-      </Card>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900">Budget Builder</h1>
+            <p className="text-gray-600">Balance the 2025 federal budget through spending and revenue adjustments</p>
+          </div>
+          <div className="w-32" /> {/* Spacer for centering */}
+        </div>
 
-      {/* Budget Controls */}
-      <Tabs defaultValue="spending" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="spending">Spending Cuts</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue Increases</TabsTrigger>
-        </TabsList>
+        {/* Current Status */}
+        <Card className={`border-2 ${isBalanced ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {isBalanced ? (
+                <>
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <span className="text-green-800">Budget Balanced!</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                  <span className="text-red-800">Budget Deficit</span>
+                </>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{formatLargeNumber(spending * 1000000000)}</div>
+                <div className="text-sm text-blue-700">Total Spending</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{formatLargeNumber(revenue * 1000000000)}</div>
+                <div className="text-sm text-green-700">Total Revenue</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-2xl font-bold ${isBalanced ? "text-green-600" : "text-red-600"}`}>
+                  {formatLargeNumber(Math.abs(deficit) * 1000000000)}
+                </div>
+                <div className={`text-sm ${isBalanced ? "text-green-700" : "text-red-700"}`}>
+                  {isBalanced ? "Surplus" : "Deficit"}
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">
+                  {formatLargeNumber(deficitReduction * 1000000000)}
+                </div>
+                <div className="text-sm text-purple-700">Deficit Reduction</div>
+              </div>
+            </div>
 
-        <TabsContent value="spending" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingDown className="h-5 w-5" />
-                Reduce Federal Spending
-              </CardTitle>
-              <CardDescription>
-                Cut spending in various categories. Current total: {formatBillions(totalSpendingCuts)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {Object.entries(BUDGET_2025.spending).map(([category, amount]) => {
-                const cutKey = category as keyof typeof spendingCuts
-                const currentCut = spendingCuts[cutKey] || 0
-                const maxCut = Math.floor(amount * 0.5) // Max 50% cut
+            {isBalanced && (
+              <div className="mt-4 text-center">
+                <Button onClick={handleComplete} size="lg" className="bg-green-600 hover:bg-green-700">
+                  Complete & Share Results
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-                return (
-                  <div key={category} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <label className="font-medium capitalize">{category.replace(/([A-Z])/g, " $1").trim()}</label>
-                      <div className="text-sm text-muted-foreground">
-                        {formatBillions(amount)} → {formatBillions(amount - currentCut)}
+        {/* Scenario Buttons */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Scenarios</CardTitle>
+            <CardDescription>Apply pre-configured budget approaches or build your own</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant={selectedScenario === "progressive" ? "default" : "outline"}
+                onClick={() => applyScenario("progressive")}
+              >
+                Progressive Approach
+              </Button>
+              <Button
+                variant={selectedScenario === "conservative" ? "default" : "outline"}
+                onClick={() => applyScenario("conservative")}
+              >
+                Conservative Approach
+              </Button>
+              <Button
+                variant={selectedScenario === "balanced" ? "default" : "outline"}
+                onClick={() => applyScenario("balanced")}
+              >
+                Balanced Approach
+              </Button>
+              <Button variant="outline" onClick={resetToBaseline}>
+                Reset to Baseline
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Budget Controls */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="spending">Spending ({spendingItems.length} categories)</TabsTrigger>
+            <TabsTrigger value="revenue">Revenue ({revenueItems.length} sources)</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="spending" className="space-y-4">
+            {spendingItems.map((item) => {
+              const change = item.proposed - item.current
+              const changePercent = (change / item.current) * 100
+
+              return (
+                <Card key={item.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        {item.icon}
+                        {item.name}
+                      </CardTitle>
+                      <div className="text-right">
+                        <div className="text-xl font-bold">{formatLargeNumber(item.proposed * 1000000000)}</div>
+                        <div
+                          className={`text-sm ${change > 0 ? "text-red-600" : change < 0 ? "text-green-600" : "text-gray-600"}`}
+                        >
+                          {change > 0 ? "+" : ""}
+                          {formatLargeNumber(change * 1000000000)} ({changePercent.toFixed(1)}%)
+                        </div>
                       </div>
                     </div>
-                    <Slider
-                      value={[currentCut]}
-                      onValueChange={([value]) => {
-                        setSpendingCuts((prev) => ({ ...prev, [cutKey]: value }))
-                        trackUserAction("adjust_spending", category, value.toString())
-                      }}
-                      max={maxCut}
-                      step={5}
-                      className="w-full"
-                      disabled={!customMode && !selectedScenario}
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>$0B</span>
-                      <span className="font-medium">Cut: {formatBillions(currentCut)}</span>
-                      <span>Max: {formatBillions(maxCut)}</span>
+                    <CardDescription>{item.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Slider
+                        value={[item.proposed]}
+                        onValueChange={(value) => updateBudgetItem(item.id, value[0])}
+                        min={item.min}
+                        max={item.max}
+                        step={1}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-sm text-gray-600">
+                        <span>{formatLargeNumber(item.min * 1000000000)}</span>
+                        <span>Current: {formatLargeNumber(item.current * 1000000000)}</span>
+                        <span>{formatLargeNumber(item.max * 1000000000)}</span>
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </TabsContent>
 
-        <TabsContent value="revenue" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Increase Federal Revenue
-              </CardTitle>
-              <CardDescription>
-                Raise revenue through various methods. Current total: {formatBillions(totalRevenueIncreases)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">Individual Income Tax Increase</label>
-                  <div className="text-sm text-muted-foreground">Higher rates on top brackets</div>
-                </div>
-                <Slider
-                  value={[revenueIncreases.individualIncome]}
-                  onValueChange={([value]) => {
-                    setRevenueIncreases((prev) => ({ ...prev, individualIncome: value }))
-                    trackUserAction("adjust_revenue", "individualIncome", value.toString())
-                  }}
-                  max={500}
-                  step={25}
-                  disabled={!customMode && !selectedScenario}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$0B</span>
-                  <span className="font-medium">+{formatBillions(revenueIncreases.individualIncome)}</span>
-                  <span>Max: $500B</span>
-                </div>
+          <TabsContent value="revenue" className="space-y-4">
+            {revenueItems.map((item) => {
+              const change = item.proposed - item.current
+              const changePercent = (change / item.current) * 100
+
+              return (
+                <Card key={item.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        {item.icon}
+                        {item.name}
+                      </CardTitle>
+                      <div className="text-right">
+                        <div className="text-xl font-bold">{formatLargeNumber(item.proposed * 1000000000)}</div>
+                        <div
+                          className={`text-sm ${change > 0 ? "text-green-600" : change < 0 ? "text-red-600" : "text-gray-600"}`}
+                        >
+                          {change > 0 ? "+" : ""}
+                          {formatLargeNumber(change * 1000000000)} ({changePercent.toFixed(1)}%)
+                        </div>
+                      </div>
+                    </div>
+                    <CardDescription>{item.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Slider
+                        value={[item.proposed]}
+                        onValueChange={(value) => updateBudgetItem(item.id, value[0])}
+                        min={item.min}
+                        max={item.max}
+                        step={1}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-sm text-gray-600">
+                        <span>{formatLargeNumber(item.min * 1000000000)}</span>
+                        <span>Current: {formatLargeNumber(item.current * 1000000000)}</span>
+                        <span>{formatLargeNumber(item.max * 1000000000)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </TabsContent>
+        </Tabs>
+
+        {/* Progress Indicator */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Progress Toward Balance</CardTitle>
+            <CardDescription>
+              {isBalanced
+                ? "Congratulations! You've achieved a balanced budget."
+                : `You need to reduce the deficit by ${formatLargeNumber(Math.abs(deficit) * 1000000000)} more to balance the budget.`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Progress value={Math.min(100, Math.max(0, ((2650 + deficit) / 2650) * 100))} className="h-4" />
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>$2.65T Deficit</span>
+                <span>{formatPercentage(Math.min(1, Math.max(0, (2650 + deficit) / 2650)))} Complete</span>
+                <span>Balanced</span>
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">Corporate Tax Increase</label>
-                  <div className="text-sm text-muted-foreground">Raise corporate rate from 21%</div>
-                </div>
-                <Slider
-                  value={[revenueIncreases.corporateIncome]}
-                  onValueChange={([value]) => {
-                    setRevenueIncreases((prev) => ({ ...prev, corporateIncome: value }))
-                    trackUserAction("adjust_revenue", "corporateIncome", value.toString())
-                  }}
-                  max={400}
-                  step={25}
-                  disabled={!customMode && !selectedScenario}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$0B</span>
-                  <span className="font-medium">+{formatBillions(revenueIncreases.corporateIncome)}</span>
-                  <span>Max: $400B</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">Wealth Tax</label>
-                  <div className="text-sm text-muted-foreground">Tax on net worth over $50M</div>
-                </div>
-                <Slider
-                  value={[revenueIncreases.wealthTax]}
-                  onValueChange={([value]) => {
-                    setRevenueIncreases((prev) => ({ ...prev, wealthTax: value }))
-                    trackUserAction("adjust_revenue", "wealthTax", value.toString())
-                  }}
-                  max={600}
-                  step={50}
-                  disabled={!customMode && !selectedScenario}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$0B</span>
-                  <span className="font-medium">+{formatBillions(revenueIncreases.wealthTax)}</span>
-                  <span>Max: $600B</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">Value Added Tax (VAT)</label>
-                  <div className="text-sm text-muted-foreground">10% VAT on goods and services</div>
-                </div>
-                <Slider
-                  value={[revenueIncreases.vatTax]}
-                  onValueChange={([value]) => {
-                    setRevenueIncreases((prev) => ({ ...prev, vatTax: value }))
-                    trackUserAction("adjust_revenue", "vatTax", value.toString())
-                  }}
-                  max={800}
-                  step={50}
-                  disabled={!customMode && !selectedScenario}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$0B</span>
-                  <span className="font-medium">+{formatBillions(revenueIncreases.vatTax)}</span>
-                  <span>Max: $800B</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">Carbon Tax</label>
-                  <div className="text-sm text-muted-foreground">$50 per ton of CO2</div>
-                </div>
-                <Slider
-                  value={[revenueIncreases.carbonTax]}
-                  onValueChange={([value]) => {
-                    setRevenueIncreases((prev) => ({ ...prev, carbonTax: value }))
-                    trackUserAction("adjust_revenue", "carbonTax", value.toString())
-                  }}
-                  max={300}
-                  step={25}
-                  disabled={!customMode && !selectedScenario}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$0B</span>
-                  <span className="font-medium">+{formatBillions(revenueIncreases.carbonTax)}</span>
-                  <span>Max: $300B</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">Financial Transaction Tax</label>
-                  <div className="text-sm text-muted-foreground">0.1% on stock trades</div>
-                </div>
-                <Slider
-                  value={[revenueIncreases.financialTransaction]}
-                  onValueChange={([value]) => {
-                    setRevenueIncreases((prev) => ({ ...prev, financialTransaction: value }))
-                    trackUserAction("adjust_revenue", "financialTransaction", value.toString())
-                  }}
-                  max={200}
-                  step={25}
-                  disabled={!customMode && !selectedScenario}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$0B</span>
-                  <span className="font-medium">+{formatBillions(revenueIncreases.financialTransaction)}</span>
-                  <span>Max: $200B</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">Capital Gains Tax Increase</label>
-                  <div className="text-sm text-muted-foreground">Tax as ordinary income</div>
-                </div>
-                <Slider
-                  value={[revenueIncreases.capitalGains]}
-                  onValueChange={([value]) => {
-                    setRevenueIncreases((prev) => ({ ...prev, capitalGains: value }))
-                    trackUserAction("adjust_revenue", "capitalGains", value.toString())
-                  }}
-                  max={300}
-                  step={25}
-                  disabled={!customMode && !selectedScenario}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$0B</span>
-                  <span className="font-medium">+{formatBillions(revenueIncreases.capitalGains)}</span>
-                  <span>Max: $300B</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">Close Tax Loopholes</label>
-                  <div className="text-sm text-muted-foreground">Corporate and individual</div>
-                </div>
-                <Slider
-                  value={[revenueIncreases.closingLoopholes]}
-                  onValueChange={([value]) => {
-                    setRevenueIncreases((prev) => ({ ...prev, closingLoopholes: value }))
-                    trackUserAction("adjust_revenue", "closingLoopholes", value.toString())
-                  }}
-                  max={400}
-                  step={25}
-                  disabled={!customMode && !selectedScenario}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$0B</span>
-                  <span className="font-medium">+{formatBillions(revenueIncreases.closingLoopholes)}</span>
-                  <span>Max: $400B</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">Economic Growth Revenue</label>
-                  <div className="text-sm text-muted-foreground">From pro-growth policies</div>
-                </div>
-                <Slider
-                  value={[revenueIncreases.economicGrowth]}
-                  onValueChange={([value]) => {
-                    setRevenueIncreases((prev) => ({ ...prev, economicGrowth: value }))
-                    trackUserAction("adjust_revenue", "economicGrowth", value.toString())
-                  }}
-                  max={500}
-                  step={25}
-                  disabled={!customMode && !selectedScenario}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>$0B</span>
-                  <span className="font-medium">+{formatBillions(revenueIncreases.economicGrowth)}</span>
-                  <span>Max: $500B</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Action Buttons */}
-      <div className="flex justify-center space-x-4">
-        <Button
-          onClick={handleComplete}
-          disabled={!sessionId}
-          size="lg"
-          className={isBalanced ? "bg-green-600 hover:bg-green-700" : ""}
-        >
-          {isBalanced ? (
-            <>
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Complete Balanced Budget
-            </>
-          ) : (
-            <>
-              <Target className="h-5 w-5 mr-2" />
-              Save Progress
-            </>
-          )}
-        </Button>
+        {/* Complete Button */}
+        {!isBalanced && (
+          <div className="text-center">
+            <Button onClick={handleComplete} size="lg" variant="outline">
+              Complete Exercise & Share Results
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Feedback Modal */}
       <UserFeedbackModal
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
-        sessionId={sessionId || ""}
-        budgetBalance={-newDeficit}
-        scenarioName={
-          selectedScenario
-            ? PREBUILT_SCENARIOS[selectedScenario as keyof typeof PREBUILT_SCENARIOS].name
-            : "Custom Approach"
-        }
+        sessionId={sessionId}
+        budgetBalance={deficit}
+        scenarioName={selectedScenario || "Custom Approach"}
       />
     </div>
   )
