@@ -20,11 +20,6 @@ import {
 } from "recharts"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 
-/* -------------------------------------------------------------------------- */
-/*                                   DATA                                     */
-/* -------------------------------------------------------------------------- */
-
-/*  ⇢  Minimal sample– you can extend or replace with real data later. */
 const revenueData = {
   2024: {
     total: 4900,
@@ -90,25 +85,13 @@ const historical = [
   { year: 2024, total: 4900 },
 ]
 
-/* -------------------------------------------------------------------------- */
-/*                                   TYPES                                    */
-/* -------------------------------------------------------------------------- */
-
 type YearKey = keyof typeof revenueData
 
 export interface RevenueBreakdownProps {
   onBack?: () => void
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                 UTILITIES                                  */
-/* -------------------------------------------------------------------------- */
-
 const fmtBillions = (n: number) => `$${n.toLocaleString()}B`
-
-/* -------------------------------------------------------------------------- */
-/*                                COMPONENT                                   */
-/* -------------------------------------------------------------------------- */
 
 export default function RevenueBreakdown({ onBack }: RevenueBreakdownProps) {
   const [year, setYear] = useState<YearKey>("2024")
@@ -118,7 +101,6 @@ export default function RevenueBreakdown({ onBack }: RevenueBreakdownProps) {
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
       <header className="mx-auto max-w-7xl flex flex-col sm:flex-row justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -154,7 +136,6 @@ export default function RevenueBreakdown({ onBack }: RevenueBreakdownProps) {
         </div>
       </header>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8 space-y-4 max-w-7xl mx-auto">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -162,10 +143,8 @@ export default function RevenueBreakdown({ onBack }: RevenueBreakdownProps) {
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
 
-        {/* ------------------------------ OVERVIEW ----------------------------- */}
         <TabsContent value="overview" className="space-y-4">
           <div className="grid lg:grid-cols-2 gap-6">
-            {/* Pie */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -202,7 +181,6 @@ export default function RevenueBreakdown({ onBack }: RevenueBreakdownProps) {
               </CardContent>
             </Card>
 
-            {/* List */}
             <Card>
               <CardHeader>
                 <CardTitle>Sources</CardTitle>
@@ -226,7 +204,6 @@ export default function RevenueBreakdown({ onBack }: RevenueBreakdownProps) {
           </div>
         </TabsContent>
 
-        {/* ------------------------------ DETAIL ------------------------------- */}
         <TabsContent value="detail" className="space-y-4">
           <Card>
             <CardHeader>
@@ -245,7 +222,6 @@ export default function RevenueBreakdown({ onBack }: RevenueBreakdownProps) {
           </Card>
         </TabsContent>
 
-        {/* ------------------------------ TRENDS ------------------------------- */}
         <TabsContent value="trends" className="space-y-4">
           <Card>
             <CardHeader>
