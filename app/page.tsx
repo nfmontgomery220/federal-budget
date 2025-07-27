@@ -19,21 +19,27 @@ import {
   Heart,
   Briefcase,
   Activity,
+  ArrowLeft,
 } from "lucide-react"
-import BalancedBudgetBuilder from "@/balanced-budget-builder"
-import BudgetAnalyticsDashboard from "@/budget-analytics-dashboard"
-import TaxDesignCalculator from "@/tax-design-calculator"
-import MilitarySpendingBreakdown from "@/military-spending-breakdown"
-import RevenueOptimization from "@/revenue-optimization"
-import IncomeBracketImpactAnalyzer from "@/income-bracket-impact-analyzer"
-import StateTaxAnalysis from "@/state-tax-analysis"
-import RevenueBreakdown from "@/revenue-breakdown"
-import TaxPolicyScenarios from "@/tax-policy-scenarios"
-import GunsVsButterAnalysis from "@/guns-vs-butter-analysis"
-import SocialSecurityMedicareAnalysis from "@/social-security-medicare-analysis"
-import SocialSecuritySolutions from "@/social-security-solutions"
-import FullProposalGenerator from "@/full-proposal-generator"
-import LegislativeUpdateSystem from "@/legislative-update-system"
+
+// Import components dynamically to avoid module resolution issues
+import dynamic from "next/dynamic"
+
+const BalancedBudgetBuilder = dynamic(() => import("../balanced-budget-builder"), { ssr: false })
+const BudgetAnalyticsDashboard = dynamic(() => import("../budget-analytics-dashboard"), { ssr: false })
+const TaxDesignCalculator = dynamic(() => import("../tax-design-calculator"), { ssr: false })
+const MilitarySpendingBreakdown = dynamic(() => import("../military-spending-breakdown"), { ssr: false })
+const RevenueOptimization = dynamic(() => import("../revenue-optimization"), { ssr: false })
+const IncomeBracketImpactAnalyzer = dynamic(() => import("../income-bracket-impact-analyzer"), { ssr: false })
+const StateTaxAnalysis = dynamic(() => import("../state-tax-analysis"), { ssr: false })
+const RevenueBreakdown = dynamic(() => import("../revenue-breakdown"), { ssr: false })
+const TaxPolicyScenarios = dynamic(() => import("../tax-policy-scenarios"), { ssr: false })
+const GunsVsButterAnalysis = dynamic(() => import("../guns-vs-butter-analysis"), { ssr: false })
+const SocialSecurityMedicareAnalysis = dynamic(() => import("../social-security-medicare-analysis"), { ssr: false })
+const SocialSecuritySolutions = dynamic(() => import("../social-security-solutions"), { ssr: false })
+const FullProposalGenerator = dynamic(() => import("../full-proposal-generator"), { ssr: false })
+const LegislativeUpdateSystem = dynamic(() => import("../legislative-update-system"), { ssr: false })
+const FederalBudgetDashboard = dynamic(() => import("../federal-budget-dashboard"), { ssr: false })
 
 type ActiveTool =
   | "dashboard"
@@ -64,59 +70,199 @@ export default function HomePage() {
   }
 
   if (activeTool === "budget-builder") {
-    return <BalancedBudgetBuilder onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <BalancedBudgetBuilder />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "analytics") {
-    return <BudgetAnalyticsDashboard onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <BudgetAnalyticsDashboard />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "tax-design") {
-    return <TaxDesignCalculator onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <TaxDesignCalculator />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "military-spending") {
-    return <MilitarySpendingBreakdown onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <MilitarySpendingBreakdown />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "revenue-optimization") {
-    return <RevenueOptimization onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <RevenueOptimization />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "income-impact") {
-    return <IncomeBracketImpactAnalyzer onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <IncomeBracketImpactAnalyzer />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "state-tax") {
-    return <StateTaxAnalysis onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <StateTaxAnalysis />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "revenue-breakdown") {
-    return <RevenueBreakdown onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <RevenueBreakdown />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "tax-scenarios") {
-    return <TaxPolicyScenarios onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <TaxPolicyScenarios />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "guns-vs-butter") {
-    return <GunsVsButterAnalysis onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <GunsVsButterAnalysis />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "social-security") {
-    return <SocialSecurityMedicareAnalysis onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <SocialSecurityMedicareAnalysis />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "ss-solutions") {
-    return <SocialSecuritySolutions onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <SocialSecuritySolutions />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "full-proposal") {
-    return <FullProposalGenerator onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <FullProposalGenerator />
+        </div>
+      </div>
+    )
   }
 
   if (activeTool === "legislative-updates") {
-    return <LegislativeUpdateSystem onBack={handleBackToDashboard} />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <LegislativeUpdateSystem />
+        </div>
+      </div>
+    )
   }
 
   return (

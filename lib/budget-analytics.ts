@@ -127,13 +127,20 @@ export async function saveUserFeedback(sessionId: string, feedback: UserFeedback
   }
 }
 
-export async function trackInteraction(sessionId: string, actionType: string, target?: string, details?: any) {
+export async function trackInteraction(
+  sessionId: string,
+  actionType: string,
+  target?: string,
+  value?: string,
+  metadata?: any,
+) {
   try {
     const { error } = await supabase.from("user_interactions").insert({
       session_id: sessionId,
       action_type: actionType,
       target: target || null,
-      details: details ? JSON.stringify(details) : null,
+      value: value || null,
+      metadata: metadata ? metadata : null,
       timestamp: new Date().toISOString(),
     })
 

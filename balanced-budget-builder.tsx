@@ -177,7 +177,7 @@ export default function BalancedBudgetBuilder() {
 
     if (sessionId) {
       await saveBudgetConfig(sessionId, categoryId, value)
-      await trackInteraction(sessionId, "slider_change", categoryId, { value })
+      await trackInteraction(sessionId, "slider_change", categoryId, value.toString())
     }
   }
 
@@ -319,8 +319,8 @@ export default function BalancedBudgetBuilder() {
           <AlertDescription>
             Your budget has a {balance > 0 ? "surplus" : "deficit"} of ${Math.abs(balance).toFixed(0)}B.
             {balance < 0
-              ? "Consider reducing spending or increasing revenue."
-              : "Consider how to use this surplus effectively."}
+              ? " Consider reducing spending or increasing revenue."
+              : " Consider how to use this surplus effectively."}
           </AlertDescription>
         </Alert>
       )}

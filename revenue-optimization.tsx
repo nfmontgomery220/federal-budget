@@ -2,698 +2,571 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, TrendingUp, AlertTriangle, DollarSign, Shield, Download, Target, ChevronRight } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Cell } from "recharts"
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ScatterChart,
+  Scatter,
+} from "recharts"
+import {
+  TrendingUp,
+  DollarSign,
+  Target,
+  Zap,
+  Building,
+  Users,
+  Globe,
+  Calculator,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+} from "lucide-react"
 
-// Import the tax policy scenarios component
-import TaxPolicyScenarios from "./tax-policy-scenarios"
-
-// Tax expenditures and loopholes data (in billions)
-const revenueOptimizationData = {
-  2025: {
-    totalDeficit: 2650, // Updated from 1850 to reflect the actual 2025 deficit
-    taxExpenditures: {
-      total: 1840, // Total tax expenditures
-      categories: [
-        {
-          name: "Individual Tax Expenditures",
-          amount: 1240,
-          color: "#3b82f6",
-          items: [
-            { name: "Mortgage Interest Deduction", amount: 25.1, impact: "high", difficulty: "hard" },
-            { name: "State & Local Tax Deduction", amount: 13.8, impact: "medium", difficulty: "medium" },
-            { name: "Charitable Deduction", amount: 65.3, impact: "medium", difficulty: "hard" },
-            { name: "401(k) Contributions", amount: 67.4, impact: "low", difficulty: "hard" },
-            { name: "Health Insurance Exclusion", amount: 184.3, impact: "low", difficulty: "hard" },
-            { name: "Capital Gains Preference", amount: 162.9, impact: "high", difficulty: "medium" },
-            { name: "Carried Interest Loophole", amount: 1.4, impact: "high", difficulty: "easy" },
-            { name: "Step-up Basis at Death", amount: 41.9, impact: "high", difficulty: "medium" },
-          ],
-        },
-        {
-          name: "Corporate Tax Expenditures",
-          amount: 420,
-          color: "#10b981",
-          items: [
-            { name: "R&D Tax Credit", amount: 13.5, impact: "low", difficulty: "hard" },
-            { name: "Accelerated Depreciation", amount: 89.2, impact: "medium", difficulty: "medium" },
-            { name: "Depletion Allowance", amount: 1.2, impact: "high", difficulty: "easy" },
-            { name: "Foreign Tax Credit Abuse", amount: 12.8, impact: "high", difficulty: "medium" },
-            { name: "Transfer Pricing Manipulation", amount: 45.6, impact: "high", difficulty: "medium" },
-            { name: "Debt vs Equity Bias", amount: 23.4, impact: "medium", difficulty: "medium" },
-            { name: "Like-Kind Exchanges", amount: 8.9, impact: "medium", difficulty: "easy" },
-          ],
-        },
-        {
-          name: "International Tax Avoidance",
-          amount: 180,
-          color: "#f59e0b",
-          items: [
-            { name: "Profit Shifting to Tax Havens", amount: 78.5, impact: "high", difficulty: "hard" },
-            { name: "Inversions & Base Erosion", amount: 23.4, impact: "high", difficulty: "medium" },
-            { name: "Digital Services Tax Gap", amount: 15.6, impact: "high", difficulty: "medium" },
-            { name: "Offshore IP Licensing", amount: 34.2, impact: "high", difficulty: "medium" },
-            { name: "Treaty Shopping", amount: 12.8, impact: "high", difficulty: "medium" },
-            { name: "Hybrid Mismatch Arrangements", amount: 15.5, impact: "high", difficulty: "hard" },
-          ],
-        },
-      ],
-    },
-    enforcementGap: {
-      total: 496, // IRS tax gap estimate
-      categories: [
-        { name: "Individual Income Tax", amount: 314, percentage: 63.3 },
-        { name: "Corporate Income Tax", amount: 67, percentage: 13.5 },
-        { name: "Employment Tax", amount: 115, percentage: 23.2 },
-      ],
-    },
-    potentialRevenue: {
-      quickWins: [
-        { name: "Close Carried Interest Loophole", amount: 1.4, timeframe: "1 year", difficulty: "easy" },
-        { name: "End Depletion Allowance", amount: 1.2, timeframe: "1 year", difficulty: "easy" },
-        { name: "Limit Like-Kind Exchanges", amount: 4.5, timeframe: "1 year", difficulty: "easy" },
-        { name: "Digital Services Tax", amount: 15.6, timeframe: "2 years", difficulty: "medium" },
-        { name: "Minimum Tax on Large Corps", amount: 89.3, timeframe: "2 years", difficulty: "medium" },
-      ],
-      mediumTerm: [
-        { name: "Reform Step-up Basis", amount: 41.9, timeframe: "3-5 years", difficulty: "medium" },
-        { name: "Cap SALT Deduction Permanently", amount: 13.8, timeframe: "3-5 years", difficulty: "medium" },
-        { name: "Transfer Pricing Reform", amount: 45.6, timeframe: "3-5 years", difficulty: "medium" },
-        { name: "Accelerated Depreciation Reform", amount: 44.6, timeframe: "3-5 years", difficulty: "medium" },
-        { name: "International Tax Coordination", amount: 78.5, timeframe: "5+ years", difficulty: "hard" },
-      ],
-      enforcement: [
-        { name: "IRS Funding Increase", amount: 203, timeframe: "3-5 years", difficulty: "medium" },
-        { name: "Third-Party Reporting Expansion", amount: 89, timeframe: "2-3 years", difficulty: "medium" },
-        { name: "Cryptocurrency Compliance", amount: 28, timeframe: "2-3 years", difficulty: "medium" },
-        { name: "High-Income Audit Initiative", amount: 156, timeframe: "3-5 years", difficulty: "medium" },
-      ],
-    },
-  },
+interface RevenueSource {
+  id: string
+  name: string
+  current: number
+  potential: number
+  difficulty: number
+  timeframe: string
+  description: string
+  icon: any
+  pros: string[]
+  cons: string[]
 }
 
-const revenueScenarios = [
+const revenueSources: RevenueSource[] = [
   {
-    name: "Conservative Approach",
-    description: "Easy wins + basic enforcement",
-    totalRevenue: 234,
-    deficitReduction: 12.6,
-    items: ["Carried Interest", "Depletion", "Digital Tax", "Basic IRS Funding"],
+    id: "carbon_tax",
+    name: "Carbon Tax",
+    current: 0,
+    potential: 180,
+    difficulty: 75,
+    timeframe: "2-3 years",
+    description: "Tax on carbon emissions to incentivize clean energy",
+    icon: Zap,
+    pros: ["Environmental benefits", "Broad tax base", "Encourages innovation"],
+    cons: ["Regressive impact", "Industry opposition", "Complex implementation"],
   },
   {
-    name: "Moderate Reform",
-    description: "Medium difficulty reforms",
-    totalRevenue: 567,
-    deficitReduction: 30.6,
-    items: ["Quick wins", "Step-up basis", "Transfer pricing", "Enhanced enforcement"],
+    id: "financial_transaction",
+    name: "Financial Transaction Tax",
+    current: 0,
+    potential: 75,
+    difficulty: 60,
+    timeframe: "1-2 years",
+    description: "Small tax on stock, bond, and derivative trades",
+    icon: Building,
+    pros: ["Reduces speculation", "Stable revenue", "Targets wealthy"],
+    cons: ["Market impact", "Enforcement challenges", "International coordination"],
   },
   {
-    name: "Comprehensive Reform",
-    description: "Full revenue optimization",
-    totalRevenue: 892,
-    deficitReduction: 48.2,
-    items: ["All reforms", "International coordination", "Full enforcement"],
+    id: "digital_services",
+    name: "Digital Services Tax",
+    current: 0,
+    potential: 45,
+    difficulty: 50,
+    timeframe: "1 year",
+    description: "Tax on digital advertising and platform revenues",
+    icon: Globe,
+    pros: ["Targets tech giants", "Growing sector", "International momentum"],
+    cons: ["Retaliation risk", "Pass-through to consumers", "Technical complexity"],
+  },
+  {
+    id: "wealth_tax",
+    name: "Wealth Tax",
+    current: 0,
+    potential: 275,
+    difficulty: 90,
+    timeframe: "3-5 years",
+    description: "Annual tax on net worth above $50 million",
+    icon: Users,
+    pros: ["Addresses inequality", "High revenue potential", "Progressive"],
+    cons: ["Constitutional issues", "Valuation challenges", "Capital flight risk"],
+  },
+  {
+    id: "vat",
+    name: "Value Added Tax",
+    current: 0,
+    potential: 400,
+    difficulty: 85,
+    timeframe: "3-4 years",
+    description: "Consumption tax similar to European systems",
+    icon: Calculator,
+    pros: ["Broad base", "Hard to evade", "Stable revenue"],
+    cons: ["Regressive", "Administrative burden", "Political resistance"],
+  },
+  {
+    id: "tax_gap",
+    name: "Tax Gap Reduction",
+    current: 0,
+    potential: 120,
+    difficulty: 40,
+    timeframe: "2-3 years",
+    description: "Enhanced enforcement and compliance measures",
+    icon: Target,
+    pros: ["No new taxes", "Improves fairness", "Technology-enabled"],
+    cons: ["Requires IRS investment", "Diminishing returns", "Taxpayer burden"],
   },
 ]
 
-const topLoopholes = [
-  {
-    name: "Capital Gains Preference",
-    amount: 162.9,
-    description: "Lower tax rates on investment income vs wages",
-    beneficiaries: "High-income investors",
-    reform: "Treat capital gains as ordinary income for high earners",
-    difficulty: "Medium",
-    politicalRisk: "High",
-  },
-  {
-    name: "Health Insurance Exclusion",
-    amount: 184.3,
-    description: "Employer health premiums excluded from income",
-    beneficiaries: "All employees with employer insurance",
-    reform: "Cap exclusion at median plan cost",
-    difficulty: "Hard",
-    politicalRisk: "Very High",
-  },
-  {
-    name: "Profit Shifting",
-    amount: 78.5,
-    description: "Multinational corporations shift profits to tax havens",
-    beneficiaries: "Large multinational corporations",
-    reform: "Global minimum tax enforcement",
-    difficulty: "Hard",
-    politicalRisk: "Medium",
-  },
-  {
-    name: "Transfer Pricing",
-    amount: 45.6,
-    description: "Manipulation of intercompany pricing",
-    beneficiaries: "Multinational corporations",
-    reform: "Formulary apportionment system",
-    difficulty: "Medium",
-    politicalRisk: "Medium",
-  },
-  {
-    name: "Step-up Basis",
-    amount: 41.9,
-    description: "Capital gains taxes forgiven at death",
-    beneficiaries: "Wealthy families",
-    reform: "Treat death as realization event",
-    difficulty: "Medium",
-    politicalRisk: "High",
-  },
-]
+export default function RevenueOptimization() {
+  const [selectedSources, setSelectedSources] = useState<Record<string, boolean>>({})
+  const [implementationLevels, setImplementationLevels] = useState<Record<string, number>>({})
+  const [activeTab, setActiveTab] = useState("sources")
 
-interface RevenueOptimizationProps {
-  onBack?: () => void
-}
-
-export default function RevenueOptimization({ onBack }: RevenueOptimizationProps) {
-  const [selectedYear, setSelectedYear] = useState("2025")
-  const [activeTab, setActiveTab] = useState("overview")
-  const [selectedScenario, setSelectedScenario] = useState("moderate")
-  const [activeView, setActiveView] = useState("optimization") // optimization or tax-scenarios
-
-  const currentData = revenueOptimizationData[selectedYear as keyof typeof revenueOptimizationData]
-
-  const formatBillions = (amount: number) => `$${amount.toLocaleString()}B`
-  const formatPercent = (amount: number) => `${amount.toFixed(1)}%`
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
-      case "easy":
-        return "bg-green-100 text-green-800"
-      case "medium":
-        return "bg-yellow-100 text-yellow-800"
-      case "hard":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
+  const handleSourceToggle = (sourceId: string) => {
+    setSelectedSources((prev) => ({
+      ...prev,
+      [sourceId]: !prev[sourceId],
+    }))
   }
 
-  const getImpactColor = (impact: string) => {
-    switch (impact.toLowerCase()) {
-      case "high":
-        return "bg-red-100 text-red-800"
-      case "medium":
-        return "bg-yellow-100 text-yellow-800"
-      case "low":
-        return "bg-green-100 text-green-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
+  const handleImplementationChange = (sourceId: string, level: number[]) => {
+    setImplementationLevels((prev) => ({
+      ...prev,
+      [sourceId]: level[0],
+    }))
   }
 
-  const goToTaxScenarios = () => setActiveView("tax-scenarios")
-  const backToOptimization = () => setActiveView("optimization")
-
-  // Render tax scenarios view
-  if (activeView === "tax-scenarios") {
-    return <TaxPolicyScenarios onBack={backToOptimization} />
+  const calculateOptimizedRevenue = () => {
+    return revenueSources.reduce((total, source) => {
+      if (selectedSources[source.id]) {
+        const implementationLevel = implementationLevels[source.id] || 100
+        return total + (source.potential * implementationLevel) / 100
+      }
+      return total
+    }, 0)
   }
+
+  const calculateAverageDifficulty = () => {
+    const selectedSourcesList = revenueSources.filter((source) => selectedSources[source.id])
+    if (selectedSourcesList.length === 0) return 0
+
+    return selectedSourcesList.reduce((sum, source) => sum + source.difficulty, 0) / selectedSourcesList.length
+  }
+
+  const optimizedRevenue = calculateOptimizedRevenue()
+  const averageDifficulty = calculateAverageDifficulty()
+
+  const efficiencyData = revenueSources.map((source) => ({
+    name: source.name,
+    potential: source.potential,
+    difficulty: source.difficulty,
+    efficiency: source.potential / source.difficulty,
+  }))
+
+  const implementationTimeline = [
+    { phase: "Year 1", easy: 165, medium: 45, hard: 0 },
+    { phase: "Year 2", easy: 165, medium: 120, hard: 0 },
+    { phase: "Year 3", easy: 165, medium: 120, hard: 180 },
+    { phase: "Year 4", easy: 165, medium: 120, hard: 455 },
+    { phase: "Year 5", easy: 165, medium: 120, hard: 675 },
+  ]
+
+  const revenueScenarios = [
+    { name: "Conservative", revenue: 245, description: "Low-hanging fruit only" },
+    { name: "Moderate", revenue: 485, description: "Balanced approach" },
+    { name: "Aggressive", revenue: 875, description: "Maximum revenue potential" },
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              {onBack && (
-                <Button variant="outline" size="sm" onClick={onBack}>
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back to Overview
-                </Button>
-              )}
-              <h1 className="text-3xl font-bold text-gray-900">Revenue Optimization Analysis</h1>
-            </div>
-            <p className="text-gray-600">
-              Identifying tax loopholes, expenditures, and enforcement gaps to close the $
-              {formatBillions(currentData.totalDeficit)} deficit
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2025">FY 2025</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export Analysis
-            </Button>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold mb-4">Revenue Optimization</h1>
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+          Explore new revenue sources and optimization strategies to close the fiscal gap. Analyze implementation
+          difficulty, revenue potential, and economic impacts of various tax policies.
+        </p>
+      </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Current Deficit</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatBillions(currentData.totalDeficit)}</div>
-              <p className="text-xs text-muted-foreground">Revenue shortfall</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tax Expenditures</CardTitle>
-              <DollarSign className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                {formatBillions(currentData.taxExpenditures.total)}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <DollarSign className="h-8 w-8 text-green-500" />
+              <div className="text-right">
+                <p className="text-2xl font-bold">${optimizedRevenue.toFixed(0)}B</p>
+                <p className="text-sm text-muted-foreground">Potential Revenue</p>
               </div>
-              <p className="text-xs text-muted-foreground">Annual revenue loss</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Enforcement Gap</CardTitle>
-              <Shield className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {formatBillions(currentData.enforcementGap.total)}
-              </div>
-              <p className="text-xs text-muted-foreground">Uncollected taxes</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Potential Recovery</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">$892B</div>
-              <p className="text-xs text-muted-foreground">With comprehensive reform</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="loopholes">Tax Loopholes</TabsTrigger>
-            <TabsTrigger value="enforcement">Enforcement</TabsTrigger>
-            <TabsTrigger value="scenarios">Reform Scenarios</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Revenue Loss Breakdown */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenue Loss Sources</CardTitle>
-                  <CardDescription>Where potential revenue is being lost</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      amount: { label: "Amount", color: "hsl(var(--chart-1))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <ChartTooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload[0]) {
-                              const data = payload[0].payload
-                              return (
-                                <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                  <p className="font-medium">{data.name}</p>
-                                  <p className="text-sm text-gray-600">{formatBillions(data.amount)}</p>
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <PieChart
-                          data={[
-                            ...currentData.taxExpenditures.categories,
-                            { name: "Enforcement Gap", amount: currentData.enforcementGap.total, color: "#8b5cf6" },
-                          ]}
-                        >
-                          {[
-                            ...currentData.taxExpenditures.categories,
-                            { name: "Enforcement Gap", amount: currentData.enforcementGap.total, color: "#8b5cf6" },
-                          ].map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </PieChart>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              {/* Quick Wins */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    Quick Wins (1-2 Years)
-                  </CardTitle>
-                  <CardDescription>Low-hanging fruit for immediate revenue</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {currentData.potentialRevenue.quickWins.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                        <div>
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-gray-600">{item.timeframe}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-green-600">{formatBillions(item.amount)}</div>
-                          <Badge className={getDifficultyColor(item.difficulty)}>{item.difficulty}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="border-t pt-3">
-                      <div className="flex justify-between font-bold">
-                        <span>Total Quick Wins:</span>
-                        <span className="text-green-600">
-                          {formatBillions(
-                            currentData.potentialRevenue.quickWins.reduce((sum, item) => sum + item.amount, 0),
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* The Gap Challenge */}
-            <Card className="border-red-200 bg-red-50">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-red-800">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5" />
-                    The Remaining Challenge
-                  </div>
-                  <Button onClick={goToTaxScenarios} className="bg-red-600 hover:bg-red-700">
-                    Analyze Tax Scenarios
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center mb-4">
-                  <div>
-                    <div className="text-2xl font-bold text-red-600">{formatBillions(2650)}</div>
-                    <div className="text-sm text-red-700">Total Deficit</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-orange-600">{formatBillions(400)}</div>
-                    <div className="text-sm text-orange-700">Loophole Closure</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-yellow-600">{formatBillions(400)}</div>
-                    <div className="text-sm text-yellow-700">Enhanced Enforcement</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-red-600">{formatBillions(1850)}</div>
-                    <div className="text-sm text-red-700">Remaining Gap</div>
-                  </div>
-                </div>
-                <p className="text-red-800 font-medium">
-                  After closing loopholes and improving enforcement, approximately <strong>$1.85 trillion</strong> in
-                  additional revenue is still needed. This requires difficult decisions about tax increases across
-                  different income levels and new revenue sources.
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Target className="h-8 w-8 text-blue-500" />
+              <div className="text-right">
+                <p className="text-2xl font-bold">
+                  {Object.keys(selectedSources).filter((k) => selectedSources[k]).length}
                 </p>
-              </CardContent>
-            </Card>
-
-            {/* Top Opportunities */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Revenue Opportunities</CardTitle>
-                <CardDescription>Highest-impact reforms ranked by potential revenue</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {topLoopholes.map((loophole, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-medium text-lg">{loophole.name}</h4>
-                          <p className="text-sm text-gray-600">{loophole.description}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-blue-600">{formatBillions(loophole.amount)}</div>
-                          <div className="flex gap-2 mt-1">
-                            <Badge className={getDifficultyColor(loophole.difficulty)}>{loophole.difficulty}</Badge>
-                            <Badge variant="outline">{loophole.politicalRisk} Risk</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-sm">
-                        <div>
-                          <span className="font-medium">Beneficiaries: </span>
-                          <span className="text-gray-600">{loophole.beneficiaries}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Reform: </span>
-                          <span className="text-gray-600">{loophole.reform}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="loopholes" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {currentData.taxExpenditures.categories.map((category, categoryIndex) => (
-                <Card key={categoryIndex}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{category.name}</CardTitle>
-                    <CardDescription>Total: {formatBillions(category.amount)}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {category.items.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{item.name}</div>
-                            <div className="flex gap-2 mt-1">
-                              <Badge size="sm" className={getImpactColor(item.impact)}>
-                                {item.impact} impact
-                              </Badge>
-                              <Badge size="sm" className={getDifficultyColor(item.difficulty)}>
-                                {item.difficulty}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="font-bold text-sm">{formatBillions(item.amount)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                <p className="text-sm text-muted-foreground">Selected Sources</p>
+              </div>
             </div>
-          </TabsContent>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="enforcement" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Tax Gap by Category</CardTitle>
-                  <CardDescription>
-                    Taxes owed but not collected: {formatBillions(currentData.enforcementGap.total)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      amount: { label: "Amount", color: "hsl(var(--chart-2))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={currentData.enforcementGap.categories}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                        <YAxis />
-                        <ChartTooltip
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                  <p className="font-medium">{label}</p>
-                                  <p className="text-sm text-gray-600">{formatBillions(payload[0].value as number)}</p>
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Bar dataKey="amount" fill="#8b5cf6" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Enforcement Initiatives</CardTitle>
-                  <CardDescription>Potential revenue from better enforcement</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {currentData.potentialRevenue.enforcement.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                        <div>
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-gray-600">{item.timeframe}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-purple-600">{formatBillions(item.amount)}</div>
-                          <Badge className={getDifficultyColor(item.difficulty)}>{item.difficulty}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <AlertTriangle className="h-8 w-8 text-orange-500" />
+              <div className="text-right">
+                <p className="text-2xl font-bold">{averageDifficulty.toFixed(0)}%</p>
+                <p className="text-sm text-muted-foreground">Avg Difficulty</p>
+              </div>
             </div>
-          </TabsContent>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="scenarios" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {revenueScenarios.map((scenario, index) => (
-                <Card
-                  key={index}
-                  className={
-                    selectedScenario === scenario.name.toLowerCase().split(" ")[0] ? "ring-2 ring-blue-500" : ""
-                  }
-                >
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <TrendingUp className="h-8 w-8 text-purple-500" />
+              <div className="text-right">
+                <p className="text-2xl font-bold">{((optimizedRevenue / 2650) * 100).toFixed(0)}%</p>
+                <p className="text-sm text-muted-foreground">Deficit Reduction</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue Impact Alert */}
+      {optimizedRevenue > 500 && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            <strong>Significant Revenue Potential:</strong> Your selected sources could generate $
+            {optimizedRevenue.toFixed(0)}B annually, reducing the deficit by{" "}
+            {((optimizedRevenue / 2650) * 100).toFixed(0)}%. Consider implementation challenges and economic impacts.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="sources">Revenue Sources</TabsTrigger>
+          <TabsTrigger value="analysis">Efficiency Analysis</TabsTrigger>
+          <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
+          <TabsTrigger value="implementation">Implementation</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sources" className="space-y-6">
+          <div className="grid gap-6">
+            {revenueSources.map((source) => {
+              const Icon = source.icon
+              const isSelected = selectedSources[source.id]
+              const implementationLevel = implementationLevels[source.id] || 100
+              const adjustedRevenue = (source.potential * implementationLevel) / 100
+
+              return (
+                <Card key={source.id} className={isSelected ? "ring-2 ring-blue-500" : ""}>
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      {scenario.name}
-                      <Button
-                        variant={selectedScenario === scenario.name.toLowerCase().split(" ")[0] ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedScenario(scenario.name.toLowerCase().split(" ")[0])}
-                      >
-                        Select
-                      </Button>
-                    </CardTitle>
-                    <CardDescription>{scenario.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-green-600">{formatBillions(scenario.totalRevenue)}</div>
-                        <div className="text-sm text-gray-600">Additional Revenue</div>
+                      <div className="flex items-center gap-3">
+                        <Icon className="h-6 w-6 text-blue-600" />
+                        <span>{source.name}</span>
                       </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-blue-600">
-                          {formatPercent(scenario.deficitReduction)}
-                        </div>
-                        <div className="text-sm text-gray-600">Deficit Reduction</div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">${adjustedRevenue.toFixed(0)}B</Badge>
+                        <Badge
+                          variant={
+                            source.difficulty < 50 ? "default" : source.difficulty < 75 ? "secondary" : "destructive"
+                          }
+                        >
+                          {source.difficulty < 50 ? "Easy" : source.difficulty < 75 ? "Medium" : "Hard"}
+                        </Badge>
+                      </div>
+                    </CardTitle>
+                    <CardDescription>{source.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm font-medium">Revenue Potential</p>
+                        <p className="text-2xl font-bold text-green-600">${source.potential}B</p>
                       </div>
                       <div>
-                        <h4 className="font-medium mb-2">Includes:</h4>
-                        <ul className="text-sm space-y-1">
-                          {scenario.items.map((item, itemIndex) => (
-                            <li key={itemIndex} className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
+                        <p className="text-sm font-medium">Implementation Difficulty</p>
+                        <div className="flex items-center gap-2">
+                          <Progress value={source.difficulty} className="flex-1" />
+                          <span className="text-sm font-medium">{source.difficulty}%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Timeframe</p>
+                        <p className="text-lg font-semibold">{source.timeframe}</p>
                       </div>
                     </div>
+
+                    {isSelected && (
+                      <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <div className="flex justify-between mb-2">
+                            <span className="text-sm font-medium">Implementation Level</span>
+                            <span className="text-sm font-medium">{implementationLevel}%</span>
+                          </div>
+                          <Slider
+                            value={[implementationLevel]}
+                            onValueChange={(value) => handleImplementationChange(source.id, value)}
+                            min={25}
+                            max={100}
+                            step={5}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                            <span>25%</span>
+                            <span>Adjusted Revenue: ${adjustedRevenue.toFixed(0)}B</span>
+                            <span>100%</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="font-semibold text-sm text-green-600 mb-2">Advantages</h4>
+                            <ul className="text-sm space-y-1">
+                              {source.pros.map((pro, index) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                                  {pro}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-sm text-red-600 mb-2">Challenges</h4>
+                            <ul className="text-sm space-y-1">
+                              {source.cons.map((con, index) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                                  {con}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button
+                      variant={isSelected ? "default" : "outline"}
+                      onClick={() => handleSourceToggle(source.id)}
+                      className="w-full"
+                    >
+                      {isSelected ? "Remove from Plan" : "Add to Revenue Plan"}
+                    </Button>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+              )
+            })}
+          </div>
+        </TabsContent>
 
-            {/* Call to Action for Tax Scenarios */}
-            <Card className="border-blue-200 bg-blue-50">
+        <TabsContent value="analysis" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Revenue Efficiency Analysis</CardTitle>
+              <CardDescription>Revenue potential vs implementation difficulty</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <ScatterChart data={efficiencyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="difficulty" name="Difficulty" unit="%" />
+                  <YAxis dataKey="potential" name="Revenue" unit="B" />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      name === "potential" ? `$${value}B` : `${value}%`,
+                      name === "potential" ? "Revenue Potential" : "Implementation Difficulty",
+                    ]}
+                    labelFormatter={(label) => `Source: ${label}`}
+                  />
+                  <Scatter dataKey="potential" fill="#8884d8" />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between text-blue-800">
-                  <div>Next Step: Tax Policy Analysis</div>
-                  <Button onClick={goToTaxScenarios} className="bg-blue-600 hover:bg-blue-700">
-                    Analyze Tax Increase Scenarios
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </CardTitle>
+                <CardTitle>Revenue Potential Ranking</CardTitle>
+                <CardDescription>Sources ranked by total revenue potential</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-blue-700">
-                  Even with comprehensive reform, closing loopholes and improving enforcement only addresses about half
-                  the deficit. The remaining ~$1 trillion requires difficult decisions about tax increases. Explore
-                  different approaches to raising the necessary revenue while considering economic impacts and political
-                  feasibility.
-                </p>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={efficiencyData.sort((a, b) => b.potential - a.potential)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`$${value}B`, "Revenue Potential"]} />
+                    <Bar dataKey="potential" fill="#8884d8" />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Implementation Timeline</CardTitle>
-                <CardDescription>Phased approach to revenue optimization</CardDescription>
+                <CardTitle>Efficiency Ranking</CardTitle>
+                <CardDescription>Revenue per unit of implementation difficulty</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-medium text-green-700 mb-2">Year 1-2: Quick Wins ($112B)</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div>• Close carried interest loophole</div>
-                      <div>• End depletion allowance</div>
-                      <div>• Implement digital services tax</div>
-                      <div>• Basic IRS funding increase</div>
+                <div className="space-y-3">
+                  {efficiencyData
+                    .sort((a, b) => b.efficiency - a.efficiency)
+                    .map((source, index) => (
+                      <div key={source.name} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">#{index + 1}</Badge>
+                          <span className="font-medium">{source.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{source.efficiency.toFixed(1)}</p>
+                          <p className="text-xs text-muted-foreground">Revenue/Difficulty</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="scenarios" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {revenueScenarios.map((scenario) => (
+              <Card key={scenario.name}>
+                <CardHeader>
+                  <CardTitle>{scenario.name} Scenario</CardTitle>
+                  <CardDescription>{scenario.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-green-600">${scenario.revenue}B</p>
+                      <p className="text-sm text-muted-foreground">Annual Revenue</p>
                     </div>
+                    <div className="text-center">
+                      <p className="text-xl font-semibold">{((scenario.revenue / 2650) * 100).toFixed(0)}%</p>
+                      <p className="text-sm text-muted-foreground">Deficit Reduction</p>
+                    </div>
+                    <Progress value={(scenario.revenue / 875) * 100} className="h-3" />
+                    <Button variant="outline" className="w-full bg-transparent">
+                      View Details
+                    </Button>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-yellow-700 mb-2">Year 3-5: Medium Reforms ($455B)</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div>• Reform step-up basis at death</div>
-                      <div>• Transfer pricing overhaul</div>
-                      <div>• Enhanced enforcement programs</div>
-                      <div>• International tax coordination</div>
-                    </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Scenario Comparison</CardTitle>
+              <CardDescription>Revenue generation across different implementation approaches</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={revenueScenarios}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`$${value}B`, "Revenue"]} />
+                  <Bar dataKey="revenue" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="implementation" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Implementation Timeline</CardTitle>
+              <CardDescription>Revenue rollout by difficulty level over 5 years</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={implementationTimeline}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="phase" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="easy" stackId="a" fill="#22c55e" name="Easy ($B)" />
+                  <Bar dataKey="medium" stackId="a" fill="#f59e0b" name="Medium ($B)" />
+                  <Bar dataKey="hard" stackId="a" fill="#ef4444" name="Hard ($B)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  Quick Wins (Year 1)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-semibold text-sm">Tax Gap Reduction</h4>
+                    <p className="text-sm text-muted-foreground">Enhanced IRS enforcement: $45B</p>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-red-700 mb-2">Year 5+: Comprehensive Reform ($325B)</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div>• Capital gains reform</div>
-                      <div>• Full profit-shifting prevention</div>
-                      <div>• Complete enforcement modernization</div>
-                      <div>• Global tax coordination</div>
-                    </div>
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-semibold text-sm">Digital Services Tax</h4>
+                    <p className="text-sm text-muted-foreground">Tech platform revenues: $45B</p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-semibold text-sm">Corporate Loophole Closure</h4>
+                    <p className="text-sm text-muted-foreground">Existing law enforcement: $75B</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Info className="h-5 w-5 text-blue-500" />
+                  Implementation Considerations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-semibold text-sm">Legislative Process</h4>
+                    <p className="text-sm text-muted-foreground">Budget reconciliation vs regular order</p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-semibold text-sm">Administrative Capacity</h4>
+                    <p className="text-sm text-muted-foreground">IRS staffing and system upgrades needed</p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <h4 className="font-semibold text-sm">Economic Transition</h4>
+                    <p className="text-sm text-muted-foreground">Phased implementation to minimize disruption</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

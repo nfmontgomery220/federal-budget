@@ -6,115 +6,167 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DollarSign, TrendingUp, Users, Building2, Target, ArrowLeft } from "lucide-react"
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts"
+import { Progress } from "@/components/ui/progress"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts"
+import { TrendingUp, DollarSign, Users, Target, AlertTriangle, CheckCircle, Info } from "lucide-react"
 
-interface TaxDesignCalculatorProps {
-  onBack?: () => void
+interface TaxBracket {
+  min: number
+  max: number | null
+  rate: number
 }
 
-export default function TaxDesignCalculator({ onBack }: TaxDesignCalculatorProps) {
-  const [activeTab, setActiveTab] = useState("income")
+interface TaxPolicy {
+  id: string
+  name: string
+  description: string
+  currentRate: number
+  proposedRate: number
+  revenueImpact: number
+  economicImpact: string
+  politicalFeasibility: number
+}
 
-  // Tax bracket settings
-  const [incomeTaxRates, setIncomeTaxRates] = useState({
-    bracket1: { min: 0, max: 11000, rate: 10 },
-    bracket2: { min: 11000, max: 44725, rate: 12 },
-    bracket3: { min: 44725, max: 95375, rate: 22 },
-    bracket4: { min: 95375, max: 182050, rate: 24 },
-    bracket5: { min: 182050, max: 231250, rate: 32 },
-    bracket6: { min: 231250, max: 578125, rate: 35 },
-    bracket7: { min: 578125, max: Number.POSITIVE_INFINITY, rate: 37 },
-  })
+const initialTaxBrackets: TaxBracket[] = [
+  { min: 0, max: 11000, rate: 10 },
+  { min: 11000, max: 44725, rate: 12 },
+  { min: 44725, max: 95375, rate: 22 },
+  { min: 95375, max: 182050, rate: 24 },
+  { min: 182050, max: 231250, rate: 32 },
+  { min: 231250, max: 578125, rate: 35 },
+  { min: 578125, max: null, rate: 37 },
+]
 
-  const [corporateRate, setCorporateRate] = useState([21])
-  const [capitalGainsRate, setCapitalGainsRate] = useState([20])
-  const [payrollTaxCap, setPayrollTaxCap] = useState([160200])
-  const [estateTaxRate, setEstateTaxRate] = useState([40])
-  const [estateTaxExemption, setEstateTaxExemption] = useState([12920000])
+const taxPolicies: TaxPolicy[] = [
+  {
+    id: "corporate",
+    name: "Corporate Tax Rate",
+    description: "Tax rate on corporate profits",
+    currentRate: 21,
+    proposedRate: 28,
+    revenueImpact: 133,
+    economicImpact: "Moderate negative impact on business investment",
+    politicalFeasibility: 65,
+  },
+  {
+    id: "capital_gains",
+    name: "Capital Gains Tax",
+    description: "Tax on investment gains for high earners",
+    currentRate: 20,
+    proposedRate: 28,
+    revenueImpact: 78,
+    economicImpact: "May reduce investment activity",
+    politicalFeasibility: 45,
+  },
+  {
+    id: "estate_tax",
+    name: "Estate Tax",
+    description: "Tax on inherited wealth above exemption",
+    currentRate: 40,
+    proposedRate: 45,
+    revenueImpact: 23,
+    economicImpact: "Minimal economic impact, affects few families",
+    politicalFeasibility: 35,
+  },
+  {
+    id: "payroll_cap",
+    name: "Payroll Tax Cap Removal",
+    description: "Remove Social Security tax cap on high earners",
+    currentRate: 0,
+    proposedRate: 100,
+    revenueImpact: 165,
+    economicImpact: "Increases tax burden on high earners",
+    politicalFeasibility: 55,
+  },
+]
 
-  // New tax proposals
-  const [wealthTaxRate, setWealthTaxRate] = useState([2])
-  const [wealthTaxThreshold, setWealthTaxThreshold] = useState([50000000])
-  const [carbonTaxRate, setCarbonTaxRate] = useState([50])
-  const [financialTransactionTax, setFinancialTransactionTax] = useState([0.1])
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 
-  const calculateRevenue = () => {
-    // Simplified revenue calculations
-    const individualIncome = 2044 * (1 + (incomeTaxRates.bracket7.rate - 37) / 100)
-    const corporateIncome = 420 * (corporateRate[0] / 21)
-    const capitalGains = 200 * (capitalGainsRate[0] / 20)
-    const payrollTax = 1614 * (payrollTaxCap[0] / 160200)
-    const estateTax = 28 * (estateTaxRate[0] / 40)
+export default function TaxDesignCalculator() {
+  const [taxBrackets, setTaxBrackets] = useState<TaxBracket[]>(initialTaxBrackets)
+  const [policies, setPolicies] = useState<TaxPolicy[]>(taxPolicies)
+  const [activeTab, setActiveTab] = useState("brackets")
 
-    // New revenue sources
-    const wealthTax = wealthTaxRate[0] * 10 // Simplified calculation
-    const carbonTax = carbonTaxRate[0] * 6 // Simplified calculation
-    const transactionTax = financialTransactionTax[0] * 1000 // Simplified calculation
-
-    return {
-      individualIncome,
-      corporateIncome,
-      capitalGains,
-      payrollTax,
-      estateTax,
-      wealthTax,
-      carbonTax,
-      transactionTax,
-      total:
-        individualIncome +
-        corporateIncome +
-        capitalGains +
-        payrollTax +
-        estateTax +
-        wealthTax +
-        carbonTax +
-        transactionTax,
-    }
+  const handleBracketRateChange = (index: number, newRate: number[]) => {
+    const updatedBrackets = [...taxBrackets]
+    updatedBrackets[index].rate = newRate[0]
+    setTaxBrackets(updatedBrackets)
   }
 
-  const revenue = calculateRevenue()
+  const handlePolicyRateChange = (policyId: string, newRate: number[]) => {
+    const updatedPolicies = policies.map((policy) =>
+      policy.id === policyId ? { ...policy, proposedRate: newRate[0] } : policy,
+    )
+    setPolicies(updatedPolicies)
+  }
 
-  const revenueData = [
-    { name: "Individual Income", current: 2044, proposed: revenue.individualIncome },
-    { name: "Corporate Income", current: 420, proposed: revenue.corporateIncome },
-    { name: "Capital Gains", current: 200, proposed: revenue.capitalGains },
-    { name: "Payroll Tax", current: 1614, proposed: revenue.payrollTax },
-    { name: "Estate Tax", current: 28, proposed: revenue.estateTax },
-    { name: "Wealth Tax", current: 0, proposed: revenue.wealthTax },
-    { name: "Carbon Tax", current: 0, proposed: revenue.carbonTax },
-    { name: "Transaction Tax", current: 0, proposed: revenue.transactionTax },
+  const calculateTotalRevenue = () => {
+    const bracketRevenue = taxBrackets.reduce((sum, bracket) => {
+      // Simplified calculation - in reality this would be much more complex
+      const baseRevenue = bracket.rate * 10 // Placeholder calculation
+      return sum + baseRevenue
+    }, 0)
+
+    const policyRevenue = policies.reduce((sum, policy) => {
+      const rateIncrease = (policy.proposedRate - policy.currentRate) / 100
+      return sum + policy.revenueImpact * rateIncrease
+    }, 0)
+
+    return bracketRevenue + policyRevenue
+  }
+
+  const calculateEffectiveRate = (income: number) => {
+    let tax = 0
+    let remainingIncome = income
+
+    for (const bracket of taxBrackets) {
+      if (remainingIncome <= 0) break
+
+      const bracketMax = bracket.max || income
+      const taxableInThisBracket = Math.min(remainingIncome, bracketMax - bracket.min)
+
+      if (taxableInThisBracket > 0) {
+        tax += (taxableInThisBracket * bracket.rate) / 100
+        remainingIncome -= taxableInThisBracket
+      }
+    }
+
+    return (tax / income) * 100
+  }
+
+  const incomeScenarios = [
+    { income: 50000, label: "$50K" },
+    { income: 100000, label: "$100K" },
+    { income: 200000, label: "$200K" },
+    { income: 500000, label: "$500K" },
+    { income: 1000000, label: "$1M" },
+    { income: 10000000, label: "$10M" },
   ]
 
-  const impactData = [
-    { income: "$0-50k", currentRate: 8.2, proposedRate: 8.5, impact: 0.3 },
-    { income: "$50k-100k", currentRate: 13.8, proposedRate: 14.2, impact: 0.4 },
-    { income: "$100k-200k", currentRate: 18.5, proposedRate: 19.1, impact: 0.6 },
-    { income: "$200k-500k", currentRate: 24.2, proposedRate: 25.8, impact: 1.6 },
-    { income: "$500k-1M", currentRate: 28.9, proposedRate: 31.4, impact: 2.5 },
-    { income: "$1M+", currentRate: 31.2, proposedRate: 35.7, impact: 4.5 },
-  ]
+  const effectiveRateData = incomeScenarios.map((scenario) => ({
+    ...scenario,
+    effectiveRate: calculateEffectiveRate(scenario.income),
+  }))
+
+  const totalRevenue = calculateTotalRevenue()
+  const revenueChange = totalRevenue - 2040 // Baseline individual income tax revenue
+
+  const policyImpactData = policies.map((policy, index) => ({
+    name: policy.name,
+    impact: policy.revenueImpact * ((policy.proposedRate - policy.currentRate) / 100),
+    feasibility: policy.politicalFeasibility,
+    color: COLORS[index % COLORS.length],
+  }))
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {onBack && (
-            <Button variant="outline" size="sm" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          )}
-          <div>
-            <h1 className="text-3xl font-bold">Tax Design Calculator</h1>
-            <p className="text-muted-foreground">Design and analyze optimal tax policies for revenue generation</p>
-          </div>
-        </div>
-        <Badge variant="outline" className="text-lg px-4 py-2">
-          Revenue: ${revenue.total.toFixed(0)}B
-        </Badge>
+      <div className="text-center">
+        <h1 className="text-3xl font-bold mb-4">Tax Design Calculator</h1>
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+          Design and analyze comprehensive tax policy reforms. Adjust rates, brackets, and policies to optimize revenue
+          while considering economic and political impacts.
+        </p>
       </div>
 
       {/* Revenue Impact Summary */}
@@ -124,7 +176,7 @@ export default function TaxDesignCalculator({ onBack }: TaxDesignCalculatorProps
             <div className="flex items-center justify-between">
               <DollarSign className="h-8 w-8 text-green-500" />
               <div className="text-right">
-                <p className="text-2xl font-bold">${revenue.total.toFixed(0)}B</p>
+                <p className="text-2xl font-bold">${totalRevenue.toFixed(0)}B</p>
                 <p className="text-sm text-muted-foreground">Total Revenue</p>
               </div>
             </div>
@@ -136,8 +188,10 @@ export default function TaxDesignCalculator({ onBack }: TaxDesignCalculatorProps
             <div className="flex items-center justify-between">
               <TrendingUp className="h-8 w-8 text-blue-500" />
               <div className="text-right">
-                <p className="text-2xl font-bold">+${(revenue.total - 4306).toFixed(0)}B</p>
-                <p className="text-sm text-muted-foreground">vs. Baseline</p>
+                <p className={`text-2xl font-bold ${revenueChange > 0 ? "text-green-600" : "text-red-600"}`}>
+                  {revenueChange > 0 ? "+" : ""}${revenueChange.toFixed(0)}B
+                </p>
+                <p className="text-sm text-muted-foreground">vs. Current</p>
               </div>
             </div>
           </CardContent>
@@ -146,10 +200,10 @@ export default function TaxDesignCalculator({ onBack }: TaxDesignCalculatorProps
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <Users className="h-8 w-8 text-purple-500" />
+              <Users className="h-8 w-8 text-orange-500" />
               <div className="text-right">
-                <p className="text-2xl font-bold">67%</p>
-                <p className="text-sm text-muted-foreground">From Top 10%</p>
+                <p className="text-2xl font-bold">{calculateEffectiveRate(100000).toFixed(1)}%</p>
+                <p className="text-sm text-muted-foreground">Middle Class Rate</p>
               </div>
             </div>
           </CardContent>
@@ -158,73 +212,80 @@ export default function TaxDesignCalculator({ onBack }: TaxDesignCalculatorProps
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <Target className="h-8 w-8 text-orange-500" />
+              <Target className="h-8 w-8 text-purple-500" />
               <div className="text-right">
-                <p className="text-2xl font-bold">18.9%</p>
-                <p className="text-sm text-muted-foreground">% of GDP</p>
+                <p className="text-2xl font-bold">{calculateEffectiveRate(1000000).toFixed(1)}%</p>
+                <p className="text-sm text-muted-foreground">High Earner Rate</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Revenue Impact Alert */}
+      {Math.abs(revenueChange) > 100 && (
+        <Alert className={revenueChange > 0 ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+          {revenueChange > 0 ? (
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+          )}
+          <AlertDescription className={revenueChange > 0 ? "text-green-800" : "text-red-800"}>
+            <strong>Significant Revenue Impact:</strong> Your tax design would{" "}
+            {revenueChange > 0 ? "increase" : "decrease"} federal revenue by ${Math.abs(revenueChange).toFixed(0)}B
+            annually. Consider the economic and political implications of this change.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="income">Income Tax</TabsTrigger>
-          <TabsTrigger value="corporate">Corporate & Capital</TabsTrigger>
-          <TabsTrigger value="new">New Revenue</TabsTrigger>
+          <TabsTrigger value="brackets">Tax Brackets</TabsTrigger>
+          <TabsTrigger value="policies">Policy Tools</TabsTrigger>
           <TabsTrigger value="analysis">Impact Analysis</TabsTrigger>
+          <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="income" className="space-y-6">
+        <TabsContent value="brackets" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Individual Income Tax Brackets</CardTitle>
-              <CardDescription>Adjust tax rates for different income levels</CardDescription>
+              <CardDescription>Adjust marginal tax rates for different income levels</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {Object.entries(incomeTaxRates).map(([key, bracket]) => (
-                <div key={key} className="space-y-2">
+              {taxBrackets.map((bracket, index) => (
+                <div key={index} className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="font-medium">
-                      ${bracket.min.toLocaleString()} -{" "}
-                      {bracket.max === Number.POSITIVE_INFINITY ? "∞" : `$${bracket.max.toLocaleString()}`}
-                    </Label>
-                    <Badge variant="outline">{bracket.rate}%</Badge>
+                    <div>
+                      <h3 className="font-semibold">
+                        ${bracket.min.toLocaleString()} - {bracket.max ? `$${bracket.max.toLocaleString()}` : "∞"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {index === 0 && "Lowest income bracket"}
+                        {index === taxBrackets.length - 1 && "Highest income bracket"}
+                        {index > 0 && index < taxBrackets.length - 1 && "Middle income bracket"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold">{bracket.rate}%</p>
+                      <Badge variant="outline">Marginal Rate</Badge>
+                    </div>
                   </div>
-                  <Slider
-                    value={[bracket.rate]}
-                    onValueChange={(value) => {
-                      setIncomeTaxRates((prev) => ({
-                        ...prev,
-                        [key]: { ...bracket, rate: value[0] },
-                      }))
-                    }}
-                    max={50}
-                    min={0}
-                    step={1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>0%</span>
-                    <span>
-                      Current:{" "}
-                      {key === "bracket1"
-                        ? 10
-                        : key === "bracket2"
-                          ? 12
-                          : key === "bracket3"
-                            ? 22
-                            : key === "bracket4"
-                              ? 24
-                              : key === "bracket5"
-                                ? 32
-                                : key === "bracket6"
-                                  ? 35
-                                  : 37}
-                      %
-                    </span>
-                    <span>50%</span>
+
+                  <div className="space-y-2">
+                    <Slider
+                      value={[bracket.rate]}
+                      onValueChange={(value) => handleBracketRateChange(index, value)}
+                      min={0}
+                      max={50}
+                      step={0.5}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>0%</span>
+                      <span>Current: {bracket.rate}%</span>
+                      <span>50%</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -233,262 +294,102 @@ export default function TaxDesignCalculator({ onBack }: TaxDesignCalculatorProps
 
           <Card>
             <CardHeader>
-              <CardTitle>Payroll Tax Settings</CardTitle>
-              <CardDescription>Social Security and Medicare tax parameters</CardDescription>
+              <CardTitle>Effective Tax Rates by Income</CardTitle>
+              <CardDescription>How your bracket changes affect different income levels</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Social Security Tax Cap</Label>
-                <div className="flex items-center gap-4">
-                  <Slider
-                    value={payrollTaxCap}
-                    onValueChange={setPayrollTaxCap}
-                    max={500000}
-                    min={100000}
-                    step={10000}
-                    className="flex-1"
-                  />
-                  <Badge variant="outline" className="min-w-[100px]">
-                    ${payrollTaxCap[0].toLocaleString()}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Current cap: $160,200. Raising the cap increases revenue from high earners.
-                </p>
-              </div>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={effectiveRateData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`${Number(value).toFixed(1)}%`, "Effective Rate"]} />
+                  <Line type="monotone" dataKey="effectiveRate" stroke="#8884d8" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="corporate" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Corporate Income Tax</CardTitle>
-                <CardDescription>Tax rate on business profits</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Corporate Tax Rate</Label>
-                    <Badge variant="outline">{corporateRate[0]}%</Badge>
+        <TabsContent value="policies" className="space-y-6">
+          <div className="grid gap-6">
+            {policies.map((policy) => (
+              <Card key={policy.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>{policy.name}</span>
+                    <Badge variant="outline">{policy.proposedRate}%</Badge>
+                  </CardTitle>
+                  <CardDescription>{policy.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm font-medium">Revenue Impact</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        +${(policy.revenueImpact * ((policy.proposedRate - policy.currentRate) / 100)).toFixed(0)}B
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Political Feasibility</p>
+                      <div className="flex items-center gap-2">
+                        <Progress value={policy.politicalFeasibility} className="flex-1" />
+                        <span className="text-sm font-medium">{policy.politicalFeasibility}%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Current Rate</p>
+                      <p className="text-lg font-semibold">{policy.currentRate}%</p>
+                    </div>
                   </div>
-                  <Slider
-                    value={corporateRate}
-                    onValueChange={setCorporateRate}
-                    max={35}
-                    min={15}
-                    step={1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>15%</span>
-                    <span>Current: 21%</span>
-                    <span>35%</span>
-                  </div>
-                </div>
-                <Alert>
-                  <Building2 className="h-4 w-4" />
-                  <AlertDescription>
-                    Higher rates increase revenue but may reduce business investment and competitiveness.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Capital Gains Tax</CardTitle>
-                <CardDescription>Tax on investment profits</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Long-term Capital Gains Rate</Label>
-                    <Badge variant="outline">{capitalGainsRate[0]}%</Badge>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Proposed Rate</span>
+                      <span className="text-sm font-medium">{policy.proposedRate}%</span>
+                    </div>
+                    <Slider
+                      value={[policy.proposedRate]}
+                      onValueChange={(value) => handlePolicyRateChange(policy.id, value)}
+                      min={0}
+                      max={policy.id === "payroll_cap" ? 100 : 50}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>0%</span>
+                      <span>Current: {policy.currentRate}%</span>
+                      <span>{policy.id === "payroll_cap" ? "100%" : "50%"}</span>
+                    </div>
                   </div>
-                  <Slider
-                    value={capitalGainsRate}
-                    onValueChange={setCapitalGainsRate}
-                    max={40}
-                    min={0}
-                    step={1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>0%</span>
-                    <span>Current: 20%</span>
-                    <span>40%</span>
-                  </div>
-                </div>
-                <Alert>
-                  <TrendingUp className="h-4 w-4" />
-                  <AlertDescription>
-                    Affects investment behavior and retirement savings. Higher rates may reduce market activity.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
+
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Economic Impact:</strong> {policy.economicImpact}
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Estate Tax</CardTitle>
-              <CardDescription>Tax on large inheritances</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Estate Tax Rate</Label>
-                    <Badge variant="outline">{estateTaxRate[0]}%</Badge>
-                  </div>
-                  <Slider
-                    value={estateTaxRate}
-                    onValueChange={setEstateTaxRate}
-                    max={55}
-                    min={0}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Exemption Amount</Label>
-                    <Badge variant="outline">${(estateTaxExemption[0] / 1000000).toFixed(1)}M</Badge>
-                  </div>
-                  <Slider
-                    value={estateTaxExemption}
-                    onValueChange={setEstateTaxExemption}
-                    max={25000000}
-                    min={1000000}
-                    step={500000}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="new" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Wealth Tax</CardTitle>
-                <CardDescription>Annual tax on net worth above threshold</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Wealth Tax Rate</Label>
-                    <Badge variant="outline">{wealthTaxRate[0]}%</Badge>
-                  </div>
-                  <Slider
-                    value={wealthTaxRate}
-                    onValueChange={setWealthTaxRate}
-                    max={5}
-                    min={0}
-                    step={0.1}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Threshold</Label>
-                    <Badge variant="outline">${(wealthTaxThreshold[0] / 1000000).toFixed(0)}M</Badge>
-                  </div>
-                  <Slider
-                    value={wealthTaxThreshold}
-                    onValueChange={setWealthTaxThreshold}
-                    max={100000000}
-                    min={10000000}
-                    step={5000000}
-                    className="w-full"
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Estimated revenue: ${revenue.wealthTax.toFixed(0)}B annually
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Carbon Tax</CardTitle>
-                <CardDescription>Tax on carbon emissions</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Carbon Tax Rate</Label>
-                    <Badge variant="outline">${carbonTaxRate[0]}/ton CO₂</Badge>
-                  </div>
-                  <Slider
-                    value={carbonTaxRate}
-                    onValueChange={setCarbonTaxRate}
-                    max={200}
-                    min={0}
-                    step={5}
-                    className="w-full"
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Estimated revenue: ${revenue.carbonTax.toFixed(0)}B annually
-                </p>
-                <Alert>
-                  <TrendingUp className="h-4 w-4" />
-                  <AlertDescription>
-                    Reduces emissions while generating revenue. May increase energy costs for consumers.
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Financial Transaction Tax</CardTitle>
-              <CardDescription>Small tax on stock, bond, and derivative trades</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Transaction Tax Rate</Label>
-                  <Badge variant="outline">{financialTransactionTax[0]}%</Badge>
-                </div>
-                <Slider
-                  value={financialTransactionTax}
-                  onValueChange={setFinancialTransactionTax}
-                  max={1}
-                  min={0}
-                  step={0.01}
-                  className="w-full"
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Estimated revenue: ${revenue.transactionTax.toFixed(0)}B annually
-              </p>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Revenue Comparison</CardTitle>
-                <CardDescription>Current vs. proposed revenue by source</CardDescription>
+                <CardTitle>Policy Revenue Impact</CardTitle>
+                <CardDescription>Revenue generated by each policy change</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={revenueData}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={policyImpactData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} fontSize={12} />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
                     <YAxis />
-                    <Tooltip formatter={(value: number) => `$${value.toFixed(0)}B`} />
-                    <Bar dataKey="current" fill="#94a3b8" name="Current" />
-                    <Bar dataKey="proposed" fill="#3b82f6" name="Proposed" />
+                    <Tooltip formatter={(value) => [`$${Number(value).toFixed(0)}B`, "Revenue Impact"]} />
+                    <Bar dataKey="impact" fill="#8884d8" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -496,60 +397,163 @@ export default function TaxDesignCalculator({ onBack }: TaxDesignCalculatorProps
 
             <Card>
               <CardHeader>
-                <CardTitle>Tax Burden by Income</CardTitle>
-                <CardDescription>Effective tax rates across income levels</CardDescription>
+                <CardTitle>Political Feasibility vs Impact</CardTitle>
+                <CardDescription>Balance between revenue potential and political viability</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={impactData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="income" />
-                    <YAxis />
-                    <Tooltip formatter={(value: number) => `${value}%`} />
-                    <Line type="monotone" dataKey="currentRate" stroke="#94a3b8" name="Current Rate" />
-                    <Line type="monotone" dataKey="proposedRate" stroke="#3b82f6" name="Proposed Rate" />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div className="space-y-4">
+                  {policyImpactData.map((policy) => (
+                    <div key={policy.name} className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium">{policy.name}</span>
+                        <span className="text-sm">
+                          ${policy.impact.toFixed(0)}B | {policy.feasibility}% feasible
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">Revenue Impact</div>
+                          <Progress value={(policy.impact / 200) * 100} className="h-2" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">Political Feasibility</div>
+                          <Progress value={policy.feasibility} className="h-2" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Policy Impact Summary</CardTitle>
-              <CardDescription>Key effects of your tax design</CardDescription>
+              <CardTitle>Tax Burden Distribution</CardTitle>
+              <CardDescription>How your tax design affects different income groups</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-green-600">Revenue Effects</h4>
-                  <ul className="text-sm space-y-1">
-                    <li>• Total revenue: ${revenue.total.toFixed(0)}B</li>
-                    <li>• Increase: +${(revenue.total - 4306).toFixed(0)}B</li>
-                    <li>
-                      • New sources: ${(revenue.wealthTax + revenue.carbonTax + revenue.transactionTax).toFixed(0)}B
-                    </li>
-                  </ul>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-blue-600">Distributional Effects</h4>
-                  <ul className="text-sm space-y-1">
-                    <li>• Progressive structure maintained</li>
-                    <li>• Top 1% effective rate: ~36%</li>
-                    <li>• Middle class impact: minimal</li>
-                  </ul>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-orange-600">Economic Considerations</h4>
-                  <ul className="text-sm space-y-1">
-                    <li>• Investment incentives affected</li>
-                    <li>• Carbon reduction benefits</li>
-                    <li>• Administrative complexity</li>
-                  </ul>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {incomeScenarios.map((scenario) => (
+                  <div key={scenario.income} className="text-center p-4 border rounded-lg">
+                    <p className="text-lg font-semibold">{scenario.label}</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {calculateEffectiveRate(scenario.income).toFixed(1)}%
+                    </p>
+                    <p className="text-sm text-muted-foreground">Effective Rate</p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="scenarios" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Progressive Scenario</CardTitle>
+                <CardDescription>Higher rates on wealthy, lower on middle class</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Top Rate Increase</span>
+                    <Badge>45%</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Middle Class Relief</span>
+                    <Badge variant="outline">-2%</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Revenue Impact</span>
+                    <Badge className="bg-green-100 text-green-800">+$180B</Badge>
+                  </div>
+                  <Button className="w-full bg-transparent" variant="outline">
+                    Apply Progressive Scenario
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Flat Tax Scenario</CardTitle>
+                <CardDescription>Single rate for all income levels</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Flat Rate</span>
+                    <Badge>20%</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Simplification</span>
+                    <Badge variant="outline">High</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Revenue Impact</span>
+                    <Badge className="bg-red-100 text-red-800">-$340B</Badge>
+                  </div>
+                  <Button className="w-full bg-transparent" variant="outline">
+                    Apply Flat Tax Scenario
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue Neutral</CardTitle>
+                <CardDescription>Maintain current revenue levels</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Rate Adjustments</span>
+                    <Badge variant="outline">Minimal</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Bracket Optimization</span>
+                    <Badge>Moderate</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Revenue Impact</span>
+                    <Badge className="bg-blue-100 text-blue-800">$0B</Badge>
+                  </div>
+                  <Button className="w-full bg-transparent" variant="outline">
+                    Apply Revenue Neutral
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Deficit Reduction</CardTitle>
+                <CardDescription>Maximum revenue generation focus</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Top Rate</span>
+                    <Badge>50%</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Corporate Rate</span>
+                    <Badge>35%</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Revenue Impact</span>
+                    <Badge className="bg-green-100 text-green-800">+$450B</Badge>
+                  </div>
+                  <Button className="w-full bg-transparent" variant="outline">
+                    Apply Deficit Reduction
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

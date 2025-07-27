@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   BarChart,
   Bar,
@@ -17,24 +17,47 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
   Area,
   AreaChart,
 } from "recharts"
 import {
   Users,
   TrendingUp,
+  TrendingDown,
   Target,
-  Activity,
   DollarSign,
-  ThumbsUp,
-  ThumbsDown,
+  Activity,
   BarChart3,
   PieChartIcon,
-  Info,
+  RefreshCw,
 } from "lucide-react"
 import { getBudgetAnalytics, type BudgetAnalytics } from "@/lib/budget-analytics"
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82CA9D"]
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
+
+const mockUserEngagement = [
+  { month: "Jan", sessions: 120, completed: 89 },
+  { month: "Feb", sessions: 145, completed: 112 },
+  { month: "Mar", sessions: 189, completed: 156 },
+  { month: "Apr", sessions: 234, completed: 198 },
+  { month: "May", sessions: 267, completed: 223 },
+  { month: "Jun", sessions: 298, completed: 251 },
+]
+
+const mockPoliticalBreakdown = [
+  { name: "Conservative", value: 35, color: "#FF6B6B" },
+  { name: "Moderate", value: 42, color: "#4ECDC4" },
+  { name: "Liberal", value: 23, color: "#45B7D1" },
+]
+
+const mockIncomeBreakdown = [
+  { bracket: "Under $50K", count: 234, percentage: 28 },
+  { bracket: "$50K-$100K", count: 312, percentage: 37 },
+  { bracket: "$100K-$200K", count: 198, percentage: 24 },
+  { bracket: "Over $200K", count: 89, percentage: 11 },
+]
 
 export default function BudgetAnalyticsDashboard() {
   const [analytics, setAnalytics] = useState<BudgetAnalytics | null>(null)
@@ -42,28 +65,42 @@ export default function BudgetAnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
 
   useEffect(() => {
-    const loadAnalytics = async () => {
-      try {
-        const data = await getBudgetAnalytics()
-        setAnalytics(data)
-      } catch (error) {
-        console.error("Failed to load analytics:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadAnalytics()
   }, [])
+
+  const loadAnalytics = async () => {
+    setLoading(true)
+    try {
+      const data = await getBudgetAnalytics()
+      setAnalytics(data)
+    } catch (error) {
+      console.error("Failed to load analytics:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Activity className="h-8 w-8 animate-spin mx-auto mb-2" />
-            <p>Loading analytics...</p>
-          </div>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Budget Analytics Dashboard</h1>
+          <Button disabled>
+            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            Loading...
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     )
@@ -71,73 +108,34 @@ export default function BudgetAnalyticsDashboard() {
 
   if (!analytics) {
     return (
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>Unable to load analytics data. Please try again later.</AlertDescription>
-      </Alert>
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Failed to load analytics data</p>
+        <Button onClick={loadAnalytics} className="mt-4">
+          Try Again
+        </Button>
+      </div>
     )
   }
 
-  const completionRate =
-    analytics.totalSessions > 0 ? ((analytics.completedSessions / analytics.totalSessions) * 100).toFixed(1) : "0"
-
-  const engagementData = [
-    { name: "Completed", value: analytics.completedSessions, color: "#00C49F" },
-    { name: "Incomplete", value: analytics.totalSessions - analytics.completedSessions, color: "#FF8042" },
-  ]
-
-  const approachData = [
-    { name: "Spending Focused", value: analytics.spendingVsRevenue.spending_focused, color: "#FF8042" },
-    { name: "Revenue Focused", value: analytics.spendingVsRevenue.revenue_focused, color: "#00C49F" },
-    { name: "Balanced Approach", value: analytics.spendingVsRevenue.balanced, color: "#0088FE" },
-  ]
-
-  const popularityData = analytics.popularPolicies.map((policy, index) => ({
-    ...policy,
-    color: COLORS[index % COLORS.length],
-  }))
-
-  // Mock time series data for engagement trends
-  const engagementTrends = [
-    { date: "Jan", sessions: 45, completed: 32 },
-    { date: "Feb", sessions: 67, completed: 48 },
-    { date: "Mar", sessions: 89, completed: 65 },
-    { date: "Apr", sessions: 123, completed: 89 },
-    { date: "May", sessions: 156, completed: 112 },
-    { date: "Jun", sessions: 189, completed: 134 },
-    { date: "Jul", sessions: 234, completed: 167 },
-  ]
-
-  // Mock demographic data
-  const demographicData = [
-    { group: "18-29", percentage: 23, engagement: 78 },
-    { group: "30-44", percentage: 34, engagement: 85 },
-    { group: "45-59", percentage: 28, engagement: 82 },
-    { group: "60+", percentage: 15, engagement: 71 },
-  ]
-
-  const politicalData = [
-    { affiliation: "Democrat", percentage: 38, avgBalance: -156 },
-    { affiliation: "Republican", percentage: 35, avgBalance: -289 },
-    { affiliation: "Independent", percentage: 27, avgBalance: -198 },
-  ]
+  const completionRate = (analytics.completedSessions / analytics.totalSessions) * 100
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Budget Analytics Dashboard</h1>
-          <p className="text-muted-foreground">Real-time insights into user engagement and budget preferences</p>
+          <p className="text-muted-foreground">Real-time insights from user budget exercises and policy preferences</p>
         </div>
-        <Badge variant="outline" className="text-lg px-4 py-2">
-          Live Data
-        </Badge>
+        <Button onClick={loadAnalytics}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh Data
+        </Button>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <Users className="h-8 w-8 text-blue-500" />
               <div className="text-right">
@@ -149,11 +147,23 @@ export default function BudgetAnalyticsDashboard() {
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <Target className="h-8 w-8 text-green-500" />
               <div className="text-right">
-                <p className="text-2xl font-bold">{completionRate}%</p>
+                <p className="text-2xl font-bold">{analytics.completedSessions.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Completed Budgets</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <Activity className="h-8 w-8 text-orange-500" />
+              <div className="text-right">
+                <p className="text-2xl font-bold">{completionRate.toFixed(1)}%</p>
                 <p className="text-sm text-muted-foreground">Completion Rate</p>
               </div>
             </div>
@@ -161,26 +171,20 @@ export default function BudgetAnalyticsDashboard() {
         </Card>
 
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <DollarSign className="h-8 w-8 text-orange-500" />
+              {analytics.averageBalance > 0 ? (
+                <TrendingUp className="h-8 w-8 text-green-500" />
+              ) : (
+                <TrendingDown className="h-8 w-8 text-red-500" />
+              )}
               <div className="text-right">
-                <p className="text-2xl font-bold">
-                  {analytics.averageBalance > 0 ? "+" : ""}${analytics.averageBalance.toFixed(0)}B
+                <p className={`text-2xl font-bold ${analytics.averageBalance > 0 ? "text-green-600" : "text-red-600"}`}>
+                  ${Math.abs(analytics.averageBalance).toFixed(0)}B
                 </p>
-                <p className="text-sm text-muted-foreground">Avg Balance</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <TrendingUp className="h-8 w-8 text-purple-500" />
-              <div className="text-right">
-                <p className="text-2xl font-bold">+23%</p>
-                <p className="text-sm text-muted-foreground">Monthly Growth</p>
+                <p className="text-sm text-muted-foreground">
+                  Avg. {analytics.averageBalance > 0 ? "Surplus" : "Deficit"}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -201,25 +205,33 @@ export default function BudgetAnalyticsDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChartIcon className="h-5 w-5" />
-                  Session Completion
+                  Budget Approach Distribution
                 </CardTitle>
-                <CardDescription>User engagement and completion rates</CardDescription>
+                <CardDescription>How users approach balancing the budget</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={engagementData}
+                      data={[
+                        { name: "Spending Focused", value: analytics.spendingVsRevenue.spending_focused },
+                        { name: "Revenue Focused", value: analytics.spendingVsRevenue.revenue_focused },
+                        { name: "Balanced Approach", value: analytics.spendingVsRevenue.balanced },
+                      ]}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, value, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {engagementData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      {[
+                        { name: "Spending Focused", value: analytics.spendingVsRevenue.spending_focused },
+                        { name: "Revenue Focused", value: analytics.spendingVsRevenue.revenue_focused },
+                        { name: "Balanced Approach", value: analytics.spendingVsRevenue.balanced },
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -232,185 +244,121 @@ export default function BudgetAnalyticsDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Budget Approaches
+                  User Engagement Over Time
                 </CardTitle>
-                <CardDescription>How users prefer to balance the budget</CardDescription>
+                <CardDescription>Monthly session and completion trends</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={approachData}>
+                  <AreaChart data={mockUserEngagement}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
+                    <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="value" fill="#8884d8" />
-                  </BarChart>
+                    <Area type="monotone" dataKey="sessions" stackId="1" stroke="#8884d8" fill="#8884d8" />
+                    <Area type="monotone" dataKey="completed" stackId="1" stroke="#82ca9d" fill="#82ca9d" />
+                  </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Key Insights</CardTitle>
-              <CardDescription>Notable patterns and trends</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ThumbsUp className="h-5 w-5 text-green-500" />
-                    <span className="font-semibold">Most Popular</span>
-                  </div>
-                  <p className="text-sm">Infrastructure investment and tax increases on wealthy</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ThumbsDown className="h-5 w-5 text-red-500" />
-                    <span className="font-semibold">Least Popular</span>
-                  </div>
-                  <p className="text-sm">Social Security cuts and defense spending increases</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Target className="h-5 w-5 text-blue-500" />
-                    <span className="font-semibold">Balance Rate</span>
-                  </div>
-                  <p className="text-sm">34% of users achieve budget balance within ±$50B</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="policies" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Policy Popularity Rankings</CardTitle>
-              <CardDescription>Support levels for different budget policies</CardDescription>
+              <CardDescription>Support levels for different budget policies among users</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {popularityData.map((policy, index) => (
-                  <div key={policy.policy_name} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl font-bold text-muted-foreground">#{index + 1}</div>
-                      <div>
-                        <h3 className="font-semibold">{policy.policy_name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {policy.support_count} of {policy.total_count} users support this
-                        </p>
+                {analytics.popularPolicies.map((policy, index) => (
+                  <div key={policy.policy_name} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">#{index + 1}</Badge>
+                        <span className="font-medium">{policy.policy_name}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-medium">{policy.popularity_percentage}%</span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          ({policy.support_count}/{policy.total_count})
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Progress value={policy.popularity_percentage} className="w-24" />
-                      <Badge
-                        variant={policy.popularity_percentage > 50 ? "default" : "secondary"}
-                        className="min-w-[60px] justify-center"
-                      >
-                        {policy.popularity_percentage}%
-                      </Badge>
-                    </div>
+                    <Progress value={policy.popularity_percentage} className="h-2" />
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Support by Category</CardTitle>
-                <CardDescription>Policy support across different areas</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={popularityData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="policy_name" angle={-45} textAnchor="end" height={100} fontSize={12} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="popularity_percentage" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Policy Consensus</CardTitle>
-                <CardDescription>Policies with broad vs. narrow support</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-green-600 mb-2">High Consensus &gt;60%</h4>
-                  <ul className="text-sm space-y-1">
-                    <li>• Tax increases on wealthy (67%)</li>
-                    <li>• Infrastructure investment (78%)</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-orange-600 mb-2">Moderate Support 40-60%</h4>
-                  <ul className="text-sm space-y-1">
-                    <li>• Defense spending cuts (45%)</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-red-600 mb-2">Low Support &lt;40%</h4>
-                  <ul className="text-sm space-y-1">
-                    <li>• Healthcare spending cuts (34%)</li>
-                    <li>• Social Security reform (23%)</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Policy Support by Category</CardTitle>
+              <CardDescription>Detailed breakdown of policy preferences</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={analytics.popularPolicies} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" domain={[0, 100]} />
+                  <YAxis dataKey="policy_name" type="category" width={150} />
+                  <Tooltip formatter={(value) => [`${value}%`, "Support"]} />
+                  <Bar dataKey="popularity_percentage" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="demographics" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Age Demographics</CardTitle>
-                <CardDescription>User distribution and engagement by age group</CardDescription>
+                <CardTitle>Political Affiliation</CardTitle>
+                <CardDescription>Self-reported political leanings of users</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {demographicData.map((group) => (
-                    <div key={group.group} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <span className="font-semibold">{group.group} years</span>
-                        <p className="text-sm text-muted-foreground">{group.percentage}% of users</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Progress value={group.engagement} className="w-20" />
-                        <Badge variant="outline">{group.engagement}% engaged</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={mockPoliticalBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${value}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {mockPoliticalBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Political Affiliation</CardTitle>
-                <CardDescription>Budget preferences by political leaning</CardDescription>
+                <CardTitle>Income Distribution</CardTitle>
+                <CardDescription>User income brackets</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {politicalData.map((group) => (
-                    <div key={group.affiliation} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <span className="font-semibold">{group.affiliation}</span>
-                        <p className="text-sm text-muted-foreground">{group.percentage}% of users</p>
+                  {mockIncomeBreakdown.map((bracket) => (
+                    <div key={bracket.bracket} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{bracket.bracket}</span>
+                        <div className="text-right">
+                          <span className="text-sm font-medium">{bracket.percentage}%</span>
+                          <span className="text-xs text-muted-foreground ml-2">({bracket.count} users)</span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`font-semibold ${group.avgBalance > 0 ? "text-green-600" : "text-red-600"}`}>
-                          {group.avgBalance > 0 ? "+" : ""}${group.avgBalance}B
-                        </p>
-                        <p className="text-sm text-muted-foreground">Avg balance</p>
-                      </div>
+                      <Progress value={bracket.percentage} className="h-2" />
                     </div>
                   ))}
                 </div>
@@ -422,59 +370,58 @@ export default function BudgetAnalyticsDashboard() {
         <TabsContent value="trends" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Engagement Trends</CardTitle>
-              <CardDescription>User activity and completion rates over time</CardDescription>
+              <CardTitle>Budget Balance Trends</CardTitle>
+              <CardDescription>How user budget outcomes have changed over time</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <AreaChart data={engagementTrends}>
+                <LineChart
+                  data={[
+                    { month: "Jan", avgBalance: -450, sessions: 120 },
+                    { month: "Feb", avgBalance: -380, sessions: 145 },
+                    { month: "Mar", avgBalance: -320, sessions: 189 },
+                    { month: "Apr", avgBalance: -280, sessions: 234 },
+                    { month: "May", avgBalance: -235, sessions: 267 },
+                    { month: "Jun", avgBalance: -190, sessions: 298 },
+                  ]}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
+                  <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="sessions"
-                    stackId="1"
-                    stroke="#8884d8"
-                    fill="#8884d8"
-                    name="Total Sessions"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="completed"
-                    stackId="2"
-                    stroke="#82ca9d"
-                    fill="#82ca9d"
-                    name="Completed Sessions"
-                  />
-                </AreaChart>
+                  <Tooltip formatter={(value, name) => [name === "avgBalance" ? `$${value}B` : value, name]} />
+                  <Line type="monotone" dataKey="avgBalance" stroke="#8884d8" strokeWidth={2} />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600">+156%</p>
-                  <p className="text-sm text-muted-foreground">Growth since launch</p>
+                  <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-green-600">+15%</p>
+                  <p className="text-sm text-muted-foreground">Completion Rate Improvement</p>
                 </div>
               </CardContent>
             </Card>
+
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">4.2 min</p>
-                  <p className="text-sm text-muted-foreground">Avg session time</p>
+                  <DollarSign className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-blue-600">$260B</p>
+                  <p className="text-sm text-muted-foreground">Avg. Deficit Reduction</p>
                 </div>
               </CardContent>
             </Card>
+
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-purple-600">67%</p>
-                  <p className="text-sm text-muted-foreground">Return rate</p>
+                  <Users className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-purple-600">2.3x</p>
+                  <p className="text-sm text-muted-foreground">User Growth Rate</p>
                 </div>
               </CardContent>
             </Card>
