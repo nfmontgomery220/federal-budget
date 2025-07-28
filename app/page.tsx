@@ -22,24 +22,21 @@ import {
   ArrowLeft,
 } from "lucide-react"
 
-// Import components dynamically to avoid module resolution issues
-import dynamic from "next/dynamic"
-
-const BalancedBudgetBuilder = dynamic(() => import("../balanced-budget-builder"), { ssr: false })
-const BudgetAnalyticsDashboard = dynamic(() => import("../budget-analytics-dashboard"), { ssr: false })
-const TaxDesignCalculator = dynamic(() => import("../tax-design-calculator"), { ssr: false })
-const MilitarySpendingBreakdown = dynamic(() => import("../military-spending-breakdown"), { ssr: false })
-const RevenueOptimization = dynamic(() => import("../revenue-optimization"), { ssr: false })
-const IncomeBracketImpactAnalyzer = dynamic(() => import("../income-bracket-impact-analyzer"), { ssr: false })
-const StateTaxAnalysis = dynamic(() => import("../state-tax-analysis"), { ssr: false })
-const RevenueBreakdown = dynamic(() => import("../revenue-breakdown"), { ssr: false })
-const TaxPolicyScenarios = dynamic(() => import("../tax-policy-scenarios"), { ssr: false })
-const GunsVsButterAnalysis = dynamic(() => import("../guns-vs-butter-analysis"), { ssr: false })
-const SocialSecurityMedicareAnalysis = dynamic(() => import("../social-security-medicare-analysis"), { ssr: false })
-const SocialSecuritySolutions = dynamic(() => import("../social-security-solutions"), { ssr: false })
-const FullProposalGenerator = dynamic(() => import("../full-proposal-generator"), { ssr: false })
-const LegislativeUpdateSystem = dynamic(() => import("../legislative-update-system"), { ssr: false })
-const FederalBudgetDashboard = dynamic(() => import("../federal-budget-dashboard"), { ssr: false })
+// Import components with proper default exports
+import BalancedBudgetBuilder from "../balanced-budget-builder"
+import BudgetAnalyticsDashboard from "../budget-analytics-dashboard"
+import TaxDesignCalculator from "../tax-design-calculator"
+import MilitarySpendingBreakdown from "../military-spending-breakdown"
+import RevenueOptimization from "../revenue-optimization"
+import IncomeBracketImpactAnalyzer from "../income-bracket-impact-analyzer"
+import StateTaxAnalysis from "../state-tax-analysis"
+import RevenueBreakdown from "../revenue-breakdown"
+import TaxPolicyScenarios from "../tax-policy-scenarios"
+import GunsVsButterAnalysis from "../guns-vs-butter-analysis"
+import SocialSecurityMedicareAnalysis from "../social-security-medicare-analysis"
+import SocialSecuritySolutions from "../social-security-solutions"
+import FullProposalGenerator from "../full-proposal-generator"
+import LegislativeUpdateSystem from "../legislative-update-system"
 
 type ActiveTool =
   | "dashboard"
