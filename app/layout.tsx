@@ -60,10 +60,6 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   manifest: "/site.webmanifest",
-<<<<<<< HEAD
-    generator: 'v0.dev'
-=======
->>>>>>> dee3173 (Apply Updated code from vercel)
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
