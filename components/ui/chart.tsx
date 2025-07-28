@@ -69,7 +69,11 @@ ChartContainer.displayName = "Chart"
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
+<<<<<<< HEAD
     ([_, config]) => config.theme || config.color
+=======
+    ([, config]) => config.theme || config.color
+>>>>>>> dee3173 (Apply Updated code from vercel)
   )
 
   if (!colorConfig.length) {
@@ -139,7 +143,11 @@ const ChartTooltipContent = React.forwardRef<
       }
 
       const [item] = payload
+<<<<<<< HEAD
       const key = `${labelKey || item.dataKey || item.name || "value"}`
+=======
+      const key = `${labelKey || item?.dataKey || item?.name || "value"}`
+>>>>>>> dee3173 (Apply Updated code from vercel)
       const itemConfig = getPayloadConfigFromPayload(config, item, key)
       const value =
         !labelKey && typeof label === "string"

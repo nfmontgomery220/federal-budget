@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 /** @type {import('next').NextConfig} */
+=======
+>>>>>>> dee3173 (Apply Updated code from vercel)
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
