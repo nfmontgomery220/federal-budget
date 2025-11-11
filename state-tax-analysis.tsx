@@ -2,1079 +2,563 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import {
-  ArrowLeft,
-  MapPin,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Building2,
-  DollarSign,
-  Download,
-  ChevronRight,
-  Search,
-  Home,
-} from "lucide-react"
-import { Input } from "@/components/ui/input"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-  ScatterChart,
-  Scatter,
-  LineChart,
-  Line,
-  PieChart,
-  Cell,
-} from "recharts"
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import { MapPin, TrendingUp, TrendingDown, DollarSign, Users, Building } from "lucide-react"
 
-// State tax collection data (in billions)
-const stateTaxData = {
-  2024: {
-    total: 4900,
-    regions: [
-      {
-        name: "Northeast",
-        total: 1372,
-        percentage: 28.0,
-        color: "#3b82f6",
-        states: 9,
-        population: 57400000,
-        avgIncome: 72800,
-      },
-      {
-        name: "West",
-        total: 1323,
-        percentage: 27.0,
-        color: "#10b981",
-        states: 13,
-        population: 78200000,
-        avgIncome: 68900,
-      },
-      {
-        name: "South",
-        total: 1421,
-        percentage: 29.0,
-        color: "#f59e0b",
-        states: 16,
-        population: 125800000,
-        avgIncome: 56200,
-      },
-      {
-        name: "Midwest",
-        total: 784,
-        percentage: 16.0,
-        color: "#ef4444",
-        states: 12,
-        population: 68100000,
-        avgIncome: 58900,
-      },
-    ],
-    states: [
-      {
-        name: "California",
-        code: "CA",
-        region: "West",
-        total: 594.2,
-        individual: 412.8,
-        corporate: 89.4,
-        payroll: 92.0,
-        population: 39500000,
-        avgIncome: 84097,
-        perCapita: 15037,
-        federalSpending: 436.8,
-        netFlow: 157.4,
-        industries: ["Technology", "Entertainment", "Agriculture"],
-        topEmployers: ["Apple", "Google", "Meta"],
-      },
-      {
-        name: "Texas",
-        code: "TX",
-        region: "South",
-        total: 365.8,
-        individual: 234.2,
-        corporate: 67.8,
-        payroll: 63.8,
-        population: 30000000,
-        avgIncome: 64034,
-        perCapita: 12193,
-        federalSpending: 312.4,
-        netFlow: 53.4,
-        industries: ["Energy", "Technology", "Aerospace"],
-        topEmployers: ["ExxonMobil", "AT&T", "Dell"],
-      },
-      {
-        name: "New York",
-        code: "NY",
-        region: "Northeast",
-        total: 351.2,
-        individual: 267.8,
-        corporate: 45.2,
-        payroll: 38.2,
-        population: 19400000,
-        avgIncome: 70982,
-        perCapita: 18103,
-        federalSpending: 258.9,
-        netFlow: 92.3,
-        industries: ["Finance", "Real Estate", "Media"],
-        topEmployers: ["JPMorgan", "Citigroup", "Goldman Sachs"],
-      },
-      {
-        name: "Florida",
-        code: "FL",
-        region: "South",
-        total: 234.6,
-        individual: 178.9,
-        corporate: 28.4,
-        payroll: 27.3,
-        population: 22600000,
-        avgIncome: 59227,
-        perCapita: 10381,
-        federalSpending: 267.8,
-        netFlow: -33.2,
-        industries: ["Tourism", "Agriculture", "Aerospace"],
-        topEmployers: ["Disney", "Publix", "NextEra Energy"],
-      },
-      {
-        name: "Illinois",
-        code: "IL",
-        region: "Midwest",
-        total: 156.8,
-        individual: 118.9,
-        corporate: 23.4,
-        payroll: 14.5,
-        population: 12600000,
-        avgIncome: 69187,
-        perCapita: 12444,
-        federalSpending: 134.2,
-        netFlow: 22.6,
-        industries: ["Manufacturing", "Finance", "Agriculture"],
-        topEmployers: ["Boeing", "Abbott", "Caterpillar"],
-      },
-      {
-        name: "Pennsylvania",
-        code: "PA",
-        region: "Northeast",
-        total: 145.2,
-        individual: 109.8,
-        corporate: 19.8,
-        payroll: 15.6,
-        population: 13000000,
-        avgIncome: 63463,
-        perCapita: 11169,
-        federalSpending: 156.7,
-        netFlow: -11.5,
-        industries: ["Manufacturing", "Healthcare", "Energy"],
-        topEmployers: ["Comcast", "UPMC", "PNC Financial"],
-      },
-      {
-        name: "Ohio",
-        code: "OH",
-        region: "Midwest",
-        total: 123.4,
-        individual: 89.2,
-        corporate: 18.9,
-        payroll: 15.3,
-        population: 11800000,
-        avgIncome: 58642,
-        perCapita: 10458,
-        federalSpending: 134.8,
-        netFlow: -11.4,
-        industries: ["Manufacturing", "Healthcare", "Finance"],
-        topEmployers: ["Procter & Gamble", "Kroger", "Progressive"],
-      },
-      {
-        name: "Georgia",
-        code: "GA",
-        region: "South",
-        total: 118.7,
-        individual: 89.4,
-        corporate: 16.8,
-        payroll: 12.5,
-        population: 10900000,
-        avgIncome: 61224,
-        perCapita: 10890,
-        federalSpending: 89.2,
-        netFlow: 29.5,
-        industries: ["Technology", "Logistics", "Agriculture"],
-        topEmployers: ["Delta Air Lines", "Home Depot", "UPS"],
-      },
-      {
-        name: "North Carolina",
-        code: "NC",
-        region: "South",
-        total: 112.3,
-        individual: 84.6,
-        corporate: 15.2,
-        payroll: 12.5,
-        population: 10700000,
-        avgIncome: 56642,
-        perCapita: 10495,
-        federalSpending: 98.7,
-        netFlow: 13.6,
-        industries: ["Technology", "Banking", "Textiles"],
-        topEmployers: ["Bank of America", "Duke Energy", "Lowe's"],
-      },
-      {
-        name: "New Jersey",
-        code: "NJ",
-        region: "Northeast",
-        total: 134.8,
-        individual: 102.3,
-        corporate: 18.9,
-        payroll: 13.6,
-        population: 9300000,
-        avgIncome: 85751,
-        perCapita: 14495,
-        federalSpending: 89.4,
-        netFlow: 45.4,
-        industries: ["Pharmaceuticals", "Finance", "Technology"],
-        topEmployers: ["Johnson & Johnson", "Merck", "Prudential"],
-      },
-    ],
+interface StateData {
+  name: string
+  region: string
+  population: number
+  gdp: number
+  federalTaxCollected: number
+  federalSpendingReceived: number
+  netFlow: number
+  perCapitaTax: number
+  perCapitaSpending: number
+  taxBurdenRank: number
+  economicIndicators: {
+    unemploymentRate: number
+    medianIncome: number
+    povertyRate: number
+  }
+}
+
+const stateData: StateData[] = [
+  {
+    name: "California",
+    region: "West",
+    population: 39538223,
+    gdp: 3598000,
+    federalTaxCollected: 594000,
+    federalSpendingReceived: 436000,
+    netFlow: -158000,
+    perCapitaTax: 15020,
+    perCapitaSpending: 11030,
+    taxBurdenRank: 6,
+    economicIndicators: {
+      unemploymentRate: 4.6,
+      medianIncome: 84097,
+      povertyRate: 11.8,
+    },
   },
-}
-
-const taxBurdenAnalysis = [
-  { state: "CT", perCapita: 19348, avgIncome: 83771, burden: 23.1 },
-  { state: "MA", perCapita: 17991, avgIncome: 89645, burden: 20.1 },
-  { state: "NY", perCapita: 18103, avgIncome: 70982, burden: 25.5 },
-  { state: "NJ", perCapita: 14495, avgIncome: 85751, burden: 16.9 },
-  { state: "CA", perCapita: 15037, avgIncome: 84097, burden: 17.9 },
-  { state: "WY", perCapita: 8234, avgIncome: 65204, burden: 12.6 },
-  { state: "ND", perCapita: 9876, avgIncome: 68131, burden: 14.5 },
-  { state: "AK", perCapita: 11234, avgIncome: 77640, burden: 14.5 },
-  { state: "TX", perCapita: 12193, avgIncome: 64034, burden: 19.0 },
-  { state: "FL", perCapita: 10381, avgIncome: 59227, burden: 17.5 },
+  {
+    name: "Texas",
+    region: "South",
+    population: 29145505,
+    gdp: 2356000,
+    federalTaxCollected: 361000,
+    federalSpendingReceived: 280000,
+    netFlow: -81000,
+    perCapitaTax: 12390,
+    perCapitaSpending: 9610,
+    taxBurdenRank: 32,
+    economicIndicators: {
+      unemploymentRate: 4.0,
+      medianIncome: 67321,
+      povertyRate: 13.6,
+    },
+  },
+  {
+    name: "New York",
+    region: "Northeast",
+    population: 20201249,
+    gdp: 1994000,
+    federalTaxCollected: 367000,
+    federalSpendingReceived: 258000,
+    netFlow: -109000,
+    perCapitaTax: 18170,
+    perCapitaSpending: 12770,
+    taxBurdenRank: 1,
+    economicIndicators: {
+      unemploymentRate: 4.3,
+      medianIncome: 72108,
+      povertyRate: 13.0,
+    },
+  },
+  {
+    name: "Florida",
+    region: "South",
+    population: 21538187,
+    gdp: 1036000,
+    federalTaxCollected: 230000,
+    federalSpendingReceived: 190000,
+    netFlow: -40000,
+    perCapitaTax: 10680,
+    perCapitaSpending: 8820,
+    taxBurdenRank: 40,
+    economicIndicators: {
+      unemploymentRate: 3.2,
+      medianIncome: 59227,
+      povertyRate: 12.7,
+    },
+  },
+  {
+    name: "Kentucky",
+    region: "South",
+    population: 4505836,
+    gdp: 207000,
+    federalTaxCollected: 43000,
+    federalSpendingReceived: 63000,
+    netFlow: 20000,
+    perCapitaTax: 9540,
+    perCapitaSpending: 13980,
+    taxBurdenRank: 35,
+    economicIndicators: {
+      unemploymentRate: 4.1,
+      medianIncome: 52295,
+      povertyRate: 16.3,
+    },
+  },
+  {
+    name: "West Virginia",
+    region: "South",
+    population: 1793716,
+    gdp: 77000,
+    federalTaxCollected: 14000,
+    federalSpendingReceived: 24000,
+    netFlow: 10000,
+    perCapitaTax: 7800,
+    perCapitaSpending: 13380,
+    taxBurdenRank: 48,
+    economicIndicators: {
+      unemploymentRate: 3.4,
+      medianIncome: 48850,
+      povertyRate: 17.9,
+    },
+  },
 ]
 
-const economicIndicators = [
-  { year: 2020, gdp: 21060, taxes: 3421, rate: 16.2 },
-  { year: 2021, gdp: 23315, taxes: 4047, rate: 17.4 },
-  { year: 2022, gdp: 25462, taxes: 4896, rate: 19.2 },
-  { year: 2023, gdp: 26854, taxes: 4439, rate: 16.5 },
-  { year: 2024, gdp: 28230, taxes: 4900, rate: 17.4 },
-]
+const regions = ["All", "Northeast", "South", "Midwest", "West"]
 
-interface StateTaxAnalysisProps {
-  onBack?: () => void
-}
-
-export default function StateTaxAnalysis({ onBack }: StateTaxAnalysisProps) {
-  const [selectedYear, setSelectedYear] = useState("2024")
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
+export default function StateTaxAnalysis() {
+  const [selectedYear, setSelectedYear] = useState("2025")
+  const [selectedRegion, setSelectedRegion] = useState("All")
   const [selectedState, setSelectedState] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("overview")
-  const [sortBy, setSortBy] = useState("total")
 
-  const currentData = stateTaxData[selectedYear as keyof typeof stateTaxData]
+  const filteredStates =
+    selectedRegion === "All" ? stateData : stateData.filter((state) => state.region === selectedRegion)
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(amount * 1000000000)
+  const selectedStateData = selectedState ? stateData.find((state) => state.name === selectedState) : null
+
+  const regionalSummary = {
+    totalTaxCollected: filteredStates.reduce((sum, state) => sum + state.federalTaxCollected, 0),
+    totalSpendingReceived: filteredStates.reduce((sum, state) => sum + state.federalSpendingReceived, 0),
+    totalPopulation: filteredStates.reduce((sum, state) => sum + state.population, 0),
+    avgUnemployment:
+      filteredStates.reduce((sum, state) => sum + state.economicIndicators.unemploymentRate, 0) / filteredStates.length,
   }
 
-  const formatBillions = (amount: number) => {
-    return `$${amount.toLocaleString()}B`
-  }
-
-  const formatNumber = (num: number) => {
-    return num.toLocaleString()
-  }
-
-  const resetToOverview = () => {
-    console.log("Resetting to overview") // Debug log
-    setSelectedRegion(null)
-    setSelectedState(null)
-    setActiveTab("overview")
-    setSearchTerm("")
-  }
-
-  const goBackToRegion = () => {
-    setSelectedState(null)
-  }
-
-  const getStateData = (stateName: string) => {
-    return currentData.states.find((state) => state.name === stateName)
-  }
-
-  const getRegionData = (regionName: string) => {
-    return currentData.regions.find((region) => region.name === regionName)
-  }
-
-  const filteredStates = currentData.states
-    .filter((state) => state.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "total":
-          return b.total - a.total
-        case "perCapita":
-          return b.perCapita - a.perCapita
-        case "population":
-          return b.population - a.population
-        default:
-          return b.total - a.total
-      }
-    })
-
-  const getBreadcrumb = () => {
-    if (selectedState && selectedRegion) {
-      return `Tax Analysis > ${selectedRegion} > ${selectedState}`
-    } else if (selectedRegion) {
-      return `Tax Analysis > ${selectedRegion}`
-    } else if (selectedState) {
-      return `Tax Analysis > ${selectedState}`
-    }
-    return "Federal Tax Collection by State"
-  }
+  const netFlow = regionalSummary.totalTaxCollected - regionalSummary.totalSpendingReceived
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header with Navigation */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              {onBack ? (
-                <Button variant="outline" size="sm" onClick={onBack}>
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back to Federal Overview
-                </Button>
-              ) : (
-                <Button variant="outline" size="sm" onClick={resetToOverview}>
-                  <Home className="h-4 w-4 mr-1" />
-                  Overview
-                </Button>
-              )}
-              {(selectedRegion || selectedState) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={selectedState && selectedRegion ? goBackToRegion : resetToOverview}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  {selectedState && selectedRegion ? "Back to Region" : "Back"}
-                </Button>
-              )}
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">State Tax Analysis</h1>
+        <p className="text-gray-600">
+          Regional breakdown of federal tax collection and spending distribution across states
+        </p>
+      </div>
+
+      {/* Controls */}
+      <div className="flex gap-4 justify-center">
+        <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="2025">2025</SelectItem>
+            <SelectItem value="2024">2024</SelectItem>
+            <SelectItem value="2023">2023</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {regions.map((region) => (
+              <SelectItem key={region} value={region}>
+                {region}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={selectedState || "All States"}
+          onValueChange={(value) => setSelectedState(value === "All States" ? null : value)}
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Select a state" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All States">All States</SelectItem>
+            {filteredStates.map((state) => (
+              <SelectItem key={state.name} value={state.name}>
+                {state.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Regional Overview */}
+      <div className="grid md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {selectedState
-                    ? `${selectedState} Tax Analysis`
-                    : selectedRegion
-                      ? `${selectedRegion} Region Analysis`
-                      : "State Tax Collection Analysis"}
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">{getBreadcrumb()}</p>
+                <p className="text-sm font-medium text-gray-600">Tax Collected</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  ${(regionalSummary.totalTaxCollected / 1000).toFixed(0)}B
+                </p>
               </div>
+              <DollarSign className="h-8 w-8 text-green-600" />
             </div>
-            <p className="text-gray-600">
-              {selectedState
-                ? `Detailed federal tax collection analysis for ${selectedState}`
-                : selectedRegion
-                  ? `Regional breakdown of federal tax collection in the ${selectedRegion}`
-                  : "Federal tax collection breakdown by state and region"}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2024">FY 2024</SelectItem>
-                <SelectItem value="2023">FY 2023</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Collection</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatBillions(currentData.total)}</div>
-              <p className="text-xs text-muted-foreground">Across all states</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Top State</CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">California</div>
-              <p className="text-xs text-muted-foreground">{formatBillions(594.2)} collected</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Highest Per Capita</CardTitle>
-              <Users className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">Connecticut</div>
-              <p className="text-xs text-muted-foreground">$19,348 per person</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Regional Leader</CardTitle>
-              <MapPin className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">South</div>
-              <p className="text-xs text-muted-foreground">29% of total collection</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Regional Overview</TabsTrigger>
-            <TabsTrigger value="states">State Rankings</TabsTrigger>
-            <TabsTrigger value="analysis">Economic Analysis</TabsTrigger>
-            <TabsTrigger value="flows">Federal Flows</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            {!selectedRegion && !selectedState ? (
-              // Main Regional Overview - This should always show when nothing is selected
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Tax Collection by Region</CardTitle>
-                    <CardDescription>Federal tax revenue distribution across US regions</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer
-                      config={{
-                        total: { label: "Total", color: "hsl(var(--chart-1))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <ChartTooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload[0]) {
-                                const data = payload[0].payload
-                                return (
-                                  <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                    <p className="font-medium">{data.name}</p>
-                                    <p className="text-sm text-gray-600">
-                                      {formatBillions(data.total)} ({data.percentage}%)
-                                    </p>
-                                    <p className="text-xs text-gray-500">{formatNumber(data.population)} population</p>
-                                  </div>
-                                )
-                              }
-                              return null
-                            }}
-                          />
-                          <PieChart data={currentData.regions}>
-                            {currentData.regions.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </PieChart>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Regional Breakdown</CardTitle>
-                    <CardDescription>Click on any region for detailed state analysis</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {currentData.regions.map((region, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                          onClick={() => setSelectedRegion(region.name)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${region.color}20` }}>
-                              <MapPin className="h-5 w-5" style={{ color: region.color }} />
-                            </div>
-                            <div>
-                              <div className="font-medium">{region.name}</div>
-                              <div className="text-sm text-gray-600">
-                                {region.states} states • {formatNumber(region.population)} population
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-right">
-                              <div className="font-bold">{formatBillions(region.total)}</div>
-                              <div className="text-sm text-gray-600">{region.percentage}%</div>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-gray-400" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Federal Spending</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  ${(regionalSummary.totalSpendingReceived / 1000).toFixed(0)}B
+                </p>
               </div>
-            ) : selectedRegion && !selectedState ? (
-              // Region Detail View
-              <div className="space-y-6">
-                {(() => {
-                  const regionData = getRegionData(selectedRegion)
-                  const regionStates = currentData.states.filter((state) => state.region === selectedRegion)
-
-                  if (!regionData) return null
-
-                  return (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <MapPin className="h-6 w-6" style={{ color: regionData.color }} />
-                              <div>
-                                <div className="text-2xl font-bold">{formatBillions(regionData.total)}</div>
-                                <div className="text-sm text-gray-600">Total Collection</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <Users className="h-6 w-6 text-blue-600" />
-                              <div>
-                                <div className="text-2xl font-bold">{formatNumber(regionData.population)}</div>
-                                <div className="text-sm text-gray-600">Population</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <DollarSign className="h-6 w-6 text-green-600" />
-                              <div>
-                                <div className="text-2xl font-bold">${formatNumber(regionData.avgIncome)}</div>
-                                <div className="text-sm text-gray-600">Avg Income</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <Building2 className="h-6 w-6 text-purple-600" />
-                              <div>
-                                <div className="text-2xl font-bold">{regionData.states}</div>
-                                <div className="text-sm text-gray-600">States</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>States in {selectedRegion}</CardTitle>
-                          <CardDescription>Click on any state for detailed analysis</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {regionStates.map((state, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                                onClick={() => setSelectedState(state.name)}
-                              >
-                                <div>
-                                  <div className="font-medium">{state.name}</div>
-                                  <div className="text-sm text-gray-600">
-                                    Pop: {formatNumber(state.population)} • Per capita: ${formatNumber(state.perCapita)}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="text-right">
-                                    <div className="font-bold">{formatBillions(state.total)}</div>
-                                    <Badge variant={state.netFlow > 0 ? "default" : "secondary"} className="text-xs">
-                                      {state.netFlow > 0 ? "Donor" : "Recipient"}
-                                    </Badge>
-                                  </div>
-                                  <ChevronRight className="h-4 w-4 text-gray-400" />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </>
-                  )
-                })()}
-              </div>
-            ) : selectedState ? (
-              // State Detail View
-              <div className="space-y-6">
-                {(() => {
-                  const stateData = getStateData(selectedState)
-                  if (!stateData) return null
-
-                  return (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <DollarSign className="h-6 w-6 text-green-600" />
-                              <div>
-                                <div className="text-2xl font-bold">{formatBillions(stateData.total)}</div>
-                                <div className="text-sm text-gray-600">Total Collection</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <Users className="h-6 w-6 text-blue-600" />
-                              <div>
-                                <div className="text-2xl font-bold">${formatNumber(stateData.perCapita)}</div>
-                                <div className="text-sm text-gray-600">Per Capita</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <TrendingUp className="h-6 w-6 text-purple-600" />
-                              <div>
-                                <div className="text-2xl font-bold">${formatNumber(stateData.avgIncome)}</div>
-                                <div className="text-sm text-gray-600">Avg Income</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              {stateData.netFlow > 0 ? (
-                                <TrendingUp className="h-6 w-6 text-green-600" />
-                              ) : (
-                                <TrendingDown className="h-6 w-6 text-red-600" />
-                              )}
-                              <div>
-                                <div
-                                  className={`text-2xl font-bold ${
-                                    stateData.netFlow > 0 ? "text-green-600" : "text-red-600"
-                                  }`}
-                                >
-                                  {formatBillions(Math.abs(stateData.netFlow))}
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {stateData.netFlow > 0 ? "Net Contributor" : "Net Recipient"}
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Tax Collection Breakdown</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <div className="flex justify-between">
-                                  <span className="font-medium">Individual Income Tax</span>
-                                  <span className="font-bold">{formatBillions(stateData.individual)}</span>
-                                </div>
-                                <Progress value={(stateData.individual / stateData.total) * 100} className="h-2" />
-                              </div>
-                              <div className="space-y-2">
-                                <div className="flex justify-between">
-                                  <span className="font-medium">Corporate Income Tax</span>
-                                  <span className="font-bold">{formatBillions(stateData.corporate)}</span>
-                                </div>
-                                <Progress value={(stateData.corporate / stateData.total) * 100} className="h-2" />
-                              </div>
-                              <div className="space-y-2">
-                                <div className="flex justify-between">
-                                  <span className="font-medium">Payroll Taxes</span>
-                                  <span className="font-bold">{formatBillions(stateData.payroll)}</span>
-                                </div>
-                                <Progress value={(stateData.payroll / stateData.total) * 100} className="h-2" />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Economic Profile</CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div>
-                              <h4 className="font-medium mb-2">Key Industries</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {stateData.industries.map((industry, index) => (
-                                  <Badge key={index} variant="outline">
-                                    {industry}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="font-medium mb-2">Major Employers</h4>
-                              <div className="space-y-1">
-                                {stateData.topEmployers.map((employer, index) => (
-                                  <div key={index} className="text-sm text-gray-600">
-                                    • {employer}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="pt-2 border-t">
-                              <div className="text-sm text-gray-600">
-                                Population: {formatNumber(stateData.population)}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                Federal Spending: {formatBillions(stateData.federalSpending)}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </>
-                  )
-                })()}
-              </div>
-            ) : (
-              // Fallback - show main overview
-              <div className="text-center p-8">
-                <p className="text-gray-500">Loading overview...</p>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="states" className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search states..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="total">Sort by Total Collection</SelectItem>
-                  <SelectItem value="perCapita">Sort by Per Capita</SelectItem>
-                  <SelectItem value="population">Sort by Population</SelectItem>
-                </SelectContent>
-              </Select>
+              <Building className="h-8 w-8 text-blue-600" />
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredStates.map((state, index) => (
-                <Card
-                  key={index}
-                  className="hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => setSelectedState(state.name)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">{state.name}</CardTitle>
-                        <CardDescription>{state.region} Region</CardDescription>
-                      </div>
-                      <Badge variant={state.netFlow > 0 ? "default" : "secondary"}>
-                        {state.netFlow > 0 ? "Donor" : "Recipient"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Net Flow</p>
+                <p className={`text-2xl font-bold ${netFlow < 0 ? "text-red-600" : "text-green-600"}`}>
+                  {netFlow < 0 ? "-" : "+"}${Math.abs(netFlow / 1000).toFixed(0)}B
+                </p>
+              </div>
+              {netFlow < 0 ? (
+                <TrendingDown className="h-8 w-8 text-red-600" />
+              ) : (
+                <TrendingUp className="h-8 w-8 text-green-600" />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Avg Unemployment</p>
+                <p className="text-2xl font-bold text-gray-900">{regionalSummary.avgUnemployment.toFixed(1)}%</p>
+              </div>
+              <Users className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Regional Overview</TabsTrigger>
+          <TabsTrigger value="rankings">State Rankings</TabsTrigger>
+          <TabsTrigger value="economic">Economic Analysis</TabsTrigger>
+          <TabsTrigger value="flow">Federal Flow</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          {selectedStateData ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      {selectedStateData.name}
+                    </CardTitle>
+                    <CardDescription>{selectedStateData.region} Region</CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={() => setSelectedState(null)}>
+                    View All States
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div>
+                    <h4 className="font-medium mb-3">Tax & Spending</h4>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Total Collection</span>
-                        <span className="font-bold">{formatBillions(state.total)}</span>
+                        <span className="text-sm">Federal Tax Collected:</span>
+                        <span className="font-mono">${(selectedStateData.federalTaxCollected / 1000).toFixed(0)}B</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Per Capita</span>
-                        <span className="font-medium">${formatNumber(state.perCapita)}</span>
+                        <span className="text-sm">Federal Spending Received:</span>
+                        <span className="font-mono">
+                          ${(selectedStateData.federalSpendingReceived / 1000).toFixed(0)}B
+                        </span>
+                      </div>
+                      <div className="flex justify-between font-bold">
+                        <span className="text-sm">Net Flow:</span>
+                        <span
+                          className={`font-mono ${selectedStateData.netFlow < 0 ? "text-red-600" : "text-green-600"}`}
+                        >
+                          {selectedStateData.netFlow < 0 ? "-" : "+"}$
+                          {Math.abs(selectedStateData.netFlow / 1000).toFixed(0)}B
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-3">Per Capita</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Tax per Person:</span>
+                        <span className="font-mono">${selectedStateData.perCapitaTax.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Population</span>
-                        <span className="font-medium">{formatNumber(state.population)}</span>
+                        <span className="text-sm">Spending per Person:</span>
+                        <span className="font-mono">${selectedStateData.perCapitaSpending.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Avg Income</span>
-                        <span className="font-medium">${formatNumber(state.avgIncome)}</span>
+                        <span className="text-sm">Tax Burden Rank:</span>
+                        <span className="font-mono">#{selectedStateData.taxBurdenRank}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-3">Economic Indicators</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Unemployment Rate:</span>
+                        <span className="font-mono">{selectedStateData.economicIndicators.unemploymentRate}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Median Income:</span>
+                        <span className="font-mono">
+                          ${selectedStateData.economicIndicators.medianIncome.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Poverty Rate:</span>
+                        <span className="font-mono">{selectedStateData.economicIndicators.povertyRate}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {filteredStates.map((state) => (
+                <Card
+                  key={state.name}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => setSelectedState(state.name)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <MapPin className="h-4 w-4 text-gray-600" />
+                        <div>
+                          <h4 className="font-medium">{state.name}</h4>
+                          <p className="text-sm text-gray-600">
+                            {state.region} • Pop: {(state.population / 1000000).toFixed(1)}M
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-mono ${state.netFlow < 0 ? "text-red-600" : "text-green-600"}`}>
+                          {state.netFlow < 0 ? "-" : "+"}${Math.abs(state.netFlow / 1000).toFixed(0)}B
+                        </div>
+                        <div className="text-sm text-gray-600">Net Flow</div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          </TabsContent>
+          )}
+        </TabsContent>
 
-          <TabsContent value="analysis" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Tax Burden vs Income</CardTitle>
-                  <CardDescription>Per capita tax collection vs average income by state</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      burden: { label: "Tax Burden %", color: "hsl(var(--chart-1))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart data={taxBurdenAnalysis}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="avgIncome" name="Average Income" />
-                        <YAxis dataKey="perCapita" name="Per Capita Tax" />
-                        <ChartTooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload[0]) {
-                              const data = payload[0].payload
-                              return (
-                                <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                  <p className="font-medium">{data.state}</p>
-                                  <p className="text-sm text-gray-600">Income: ${formatNumber(data.avgIncome)}</p>
-                                  <p className="text-sm text-gray-600">Per Capita: ${formatNumber(data.perCapita)}</p>
-                                  <p className="text-sm text-gray-600">Burden: {data.burden}%</p>
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Scatter dataKey="perCapita" fill="#3b82f6" />
-                      </ScatterChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
+        <TabsContent value="rankings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>State Rankings by Tax Burden</CardTitle>
+              <CardDescription>Federal tax collection per capita ranking</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[...filteredStates]
+                  .sort((a, b) => a.taxBurdenRank - b.taxBurdenRank)
+                  .map((state, index) => (
+                    <div key={state.name} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-800">
+                          {state.taxBurdenRank}
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{state.name}</h4>
+                          <p className="text-sm text-gray-600">{state.region}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono">${state.perCapitaTax.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600">per capita</div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Economic Correlation</CardTitle>
-                  <CardDescription>Federal tax collection vs national GDP trends</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      gdp: { label: "GDP", color: "hsl(var(--chart-2))" },
-                      taxes: { label: "Tax Collection", color: "hsl(var(--chart-3))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={economicIndicators}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis />
-                        <ChartTooltip
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                  <p className="font-medium">{label}</p>
-                                  {payload.map((entry, index) => (
-                                    <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                      {entry.name}: ${formatNumber(entry.value as number)}T
-                                    </p>
-                                  ))}
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Line type="monotone" dataKey="gdp" stroke="var(--color-gdp)" strokeWidth={3} />
-                        <Line type="monotone" dataKey="taxes" stroke="var(--color-taxes)" strokeWidth={3} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-            </div>
-
+        <TabsContent value="economic" className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Key Insights</CardTitle>
-                <CardDescription>Analysis of state tax collection patterns</CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900">High-Income States</h4>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Connecticut, Massachusetts, and New York have the highest per-capita tax contributions, reflecting
-                    higher income levels and progressive tax structure.
-                  </p>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-medium text-green-900">Economic Powerhouses</h4>
-                  <p className="text-sm text-green-700 mt-1">
-                    California and Texas together contribute 19.6% of total federal tax revenue, driven by large
-                    populations and strong economies.
-                  </p>
-                </div>
-                <div className="p-4 bg-orange-50 rounded-lg">
-                  <h4 className="font-medium text-orange-900">Regional Balance</h4>
-                  <p className="text-sm text-orange-700 mt-1">
-                    The South leads in total collection (29%) due to population size, while the Northeast has the
-                    highest per-capita rates.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="flows" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Federal Tax vs Spending Flows</CardTitle>
-                <CardDescription>
-                  Net federal money flow by state (positive = donor, negative = recipient)
-                </CardDescription>
+                <CardTitle>Economic Performance</CardTitle>
+                <CardDescription>Key economic indicators by state</CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer
-                  config={{
-                    netFlow: { label: "Net Flow", color: "hsl(var(--chart-1))" },
-                  }}
-                  className="h-[400px]"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={currentData.states.slice(0, 10)}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="code" />
-                      <YAxis />
-                      <ChartTooltip
-                        content={({ active, payload, label }) => {
-                          if (active && payload && payload.length) {
-                            const value = payload[0].value as number
-                            return (
-                              <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                <p className="font-medium">{label}</p>
-                                <p className="text-sm text-gray-600">Net Flow: {formatBillions(Math.abs(value))}</p>
-                                <p className="text-xs text-gray-500">{value > 0 ? "Donor State" : "Recipient State"}</p>
-                              </div>
-                            )
-                          }
-                          return null
-                        }}
-                      />
-                      <Bar
-                        dataKey="netFlow"
-                        fill={(entry) => (entry.netFlow > 0 ? "#10b981" : "#ef4444")}
-                        name="Net Flow"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                <div className="space-y-4">
+                  {filteredStates.map((state) => (
+                    <div key={state.name} className="border rounded-lg p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-medium">{state.name}</h4>
+                        <Badge variant="outline">{state.region}</Badge>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <div className="text-gray-600">Unemployment</div>
+                          <div className="font-mono">{state.economicIndicators.unemploymentRate}%</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600">Median Income</div>
+                          <div className="font-mono">${(state.economicIndicators.medianIncome / 1000).toFixed(0)}K</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600">Poverty Rate</div>
+                          <div className="font-mono">{state.economicIndicators.povertyRate}%</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Donor States</CardTitle>
-                  <CardDescription>States contributing more than they receive</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {currentData.states
-                      .filter((state) => state.netFlow > 0)
-                      .sort((a, b) => b.netFlow - a.netFlow)
-                      .slice(0, 5)
-                      .map((state, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-green-50 rounded">
-                          <div>
-                            <div className="font-medium">{state.name}</div>
-                            <div className="text-sm text-gray-600">
-                              Collects: {formatBillions(state.total)} • Receives:{" "}
-                              {formatBillions(state.federalSpending)}
-                            </div>
-                          </div>
-                          <div className="font-bold text-green-600">+{formatBillions(state.netFlow)}</div>
-                        </div>
-                      ))}
+            <Card>
+              <CardHeader>
+                <CardTitle>Regional Economic Summary</CardTitle>
+                <CardDescription>Aggregate economic indicators</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-blue-900">GDP Contribution</h4>
+                    <div className="text-2xl font-bold text-blue-800">
+                      ${(filteredStates.reduce((sum, state) => sum + state.gdp, 0) / 1000).toFixed(1)}T
+                    </div>
+                    <p className="text-sm text-blue-700">Total regional GDP</p>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Recipient States</CardTitle>
-                  <CardDescription>States receiving more than they contribute</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {currentData.states
-                      .filter((state) => state.netFlow < 0)
-                      .sort((a, b) => a.netFlow - b.netFlow)
-                      .slice(0, 5)
-                      .map((state, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-red-50 rounded">
-                          <div>
-                            <div className="font-medium">{state.name}</div>
-                            <div className="text-sm text-gray-600">
-                              Collects: {formatBillions(state.total)} • Receives:{" "}
-                              {formatBillions(state.federalSpending)}
-                            </div>
-                          </div>
-                          <div className="font-bold text-red-600">{formatBillions(state.netFlow)}</div>
-                        </div>
-                      ))}
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <h4 className="font-medium text-green-900">Employment</h4>
+                    <div className="text-2xl font-bold text-green-800">
+                      {regionalSummary.avgUnemployment.toFixed(1)}%
+                    </div>
+                    <p className="text-sm text-green-700">Average unemployment rate</p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <h4 className="font-medium text-purple-900">Population</h4>
+                    <div className="text-2xl font-bold text-purple-800">
+                      {(regionalSummary.totalPopulation / 1000000).toFixed(1)}M
+                    </div>
+                    <p className="text-sm text-purple-700">Total population</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="flow" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Federal Money Flow Analysis</CardTitle>
+              <CardDescription>
+                States that contribute more vs. states that receive more federal funding
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-medium mb-3 text-red-800">Net Contributors (Send More Than Receive)</h4>
+                    <div className="space-y-2">
+                      {filteredStates
+                        .filter((state) => state.netFlow < 0)
+                        .sort((a, b) => a.netFlow - b.netFlow)
+                        .map((state) => (
+                          <div key={state.name} className="flex justify-between items-center p-2 bg-red-50 rounded">
+                            <span className="font-medium">{state.name}</span>
+                            <span className="font-mono text-red-600">
+                              -${Math.abs(state.netFlow / 1000).toFixed(0)}B
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-3 text-green-800">Net Recipients (Receive More Than Send)</h4>
+                    <div className="space-y-2">
+                      {filteredStates
+                        .filter((state) => state.netFlow > 0)
+                        .sort((a, b) => b.netFlow - a.netFlow)
+                        .map((state) => (
+                          <div key={state.name} className="flex justify-between items-center p-2 bg-green-50 rounded">
+                            <span className="font-medium">{state.name}</span>
+                            <span className="font-mono text-green-600">+${(state.netFlow / 1000).toFixed(0)}B</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium mb-2">Regional Net Flow</h4>
+                  <div className="text-center">
+                    <div className={`text-3xl font-bold ${netFlow < 0 ? "text-red-600" : "text-green-600"}`}>
+                      {netFlow < 0 ? "-" : "+"}${Math.abs(netFlow / 1000).toFixed(0)}B
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {netFlow < 0
+                        ? "This region sends more to federal government than it receives"
+                        : "This region receives more from federal government than it sends"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

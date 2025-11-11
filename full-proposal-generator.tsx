@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,12 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ArrowLeft, Download, FileText, Calculator, TrendingUp, Users, AlertTriangle, CheckCircle } from "lucide-react"
-import { formatLargeNumber, formatPercentage } from "@/utils/format-helpers"
-import { createBudgetSession, saveBudgetConfig, completeSession, trackInteraction } from "@/lib/budget-analytics"
-
-interface FullProposalGeneratorProps {
-  onBack: () => void
-}
 
 interface BudgetItem {
   category: string
@@ -33,8 +27,7 @@ interface TaxPolicy {
   revenue: number
 }
 
-export default function FullProposalGenerator({ onBack }: FullProposalGeneratorProps) {
-  const [sessionId, setSessionId] = useState<string>("")
+export default function FullProposalGenerator() {
   const [proposalTitle, setProposalTitle] = useState("Comprehensive Budget Reform Act of 2025")
   const [proposalSummary, setProposalSummary] = useState("")
   const [selectedApproach, setSelectedApproach] = useState<string>("")
@@ -62,20 +55,6 @@ export default function FullProposalGenerator({ onBack }: FullProposalGeneratorP
     { bracket: "$200k-$500k", currentRate: 0.32, proposedRate: 0.32, revenue: 0 },
     { bracket: "Over $500k", currentRate: 0.37, proposedRate: 0.37, revenue: 0 },
   ])
-
-  useEffect(() => {
-    initializeSession()
-  }, [])
-
-  const initializeSession = async () => {
-    try {
-      const id = await createBudgetSession()
-      setSessionId(id)
-      await trackInteraction(id, "started_full_proposal_generator")
-    } catch (error) {
-      console.error("Error initializing session:", error)
-    }
-  }
 
   const updateBudgetItem = (index: number, newValue: number) => {
     const updated = [...budgetItems]
@@ -111,16 +90,7 @@ export default function FullProposalGenerator({ onBack }: FullProposalGeneratorP
     setIsGenerating(true)
 
     try {
-      await trackInteraction(sessionId, "generated_full_proposal", { approach: selectedApproach })
-
       const { totalSpending, totalRevenue, deficit } = calculateTotals()
-
-      // Save configuration
-      for (const item of budgetItems) {
-        if (item.change !== 0) {
-          await saveBudgetConfig(sessionId, item.category, item.proposed)
-        }
-      }
 
       // Generate comprehensive proposal
       const proposal = {
@@ -141,7 +111,6 @@ export default function FullProposalGenerator({ onBack }: FullProposalGeneratorP
       }
 
       setGeneratedProposal(proposal)
-      await completeSession(sessionId, selectedApproach, deficit, totalSpending, totalRevenue)
     } catch (error) {
       console.error("Error generating proposal:", error)
     } finally {
@@ -198,16 +167,16 @@ export default function FullProposalGenerator({ onBack }: FullProposalGeneratorP
 ${generatedProposal.summary}
 
 ## Fiscal Impact
-- Total Spending: ${formatLargeNumber(generatedProposal.fiscalImpact.totalSpending * 1000000000)}
-- Total Revenue: ${formatLargeNumber(generatedProposal.fiscalImpact.totalRevenue * 1000000000)}
-- Budget Balance: ${formatLargeNumber(generatedProposal.fiscalImpact.deficit * 1000000000)}
-- Deficit Reduction: ${formatLargeNumber(generatedProposal.fiscalImpact.deficitReduction * 1000000000)}
+- Total Spending: $${generatedProposal.fiscalImpact.totalSpending.toLocaleString()}B
+- Total Revenue: $${generatedProposal.fiscalImpact.totalRevenue.toLocaleString()}B
+- Budget Balance: $${generatedProposal.fiscalImpact.deficit.toLocaleString()}B
+- Deficit Reduction: $${generatedProposal.fiscalImpact.deficitReduction.toLocaleString()}B
 
 ## Spending Changes
 ${generatedProposal.spendingChanges
   .map(
     (item: BudgetItem) =>
-      `- ${item.category}: ${item.change > 0 ? "+" : ""}${formatLargeNumber(item.change * 1000000000)} (${item.changePercent.toFixed(1)}%)`,
+      `- ${item.category}: ${item.change > 0 ? "+" : ""}$${item.change.toLocaleString()}B (${item.changePercent.toFixed(1)}%)`,
   )
   .join("\n")}
 
@@ -215,7 +184,7 @@ ${generatedProposal.spendingChanges
 ${generatedProposal.taxChanges
   .map(
     (policy: TaxPolicy) =>
-      `- ${policy.bracket}: ${formatPercentage(policy.currentRate)} → ${formatPercentage(policy.proposedRate)}`,
+      `- ${policy.bracket}: ${(policy.currentRate * 100).toFixed(1)}% → ${(policy.proposedRate * 100).toFixed(1)}%`,
   )
   .join("\n")}
 
@@ -252,17 +221,14 @@ ${generatedProposal.taxChanges
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <Button variant="outline" onClick={onBack} className="flex items-center gap-2 bg-transparent">
+            <Button variant="outline" onClick={() => setGeneratedProposal(null)} className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
+              Back to Generator
             </Button>
             <div className="flex gap-2">
               <Button onClick={exportProposal} className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
                 Export Proposal
-              </Button>
-              <Button variant="outline" onClick={() => setGeneratedProposal(null)}>
-                Create New Proposal
               </Button>
             </div>
           </div>
@@ -275,7 +241,7 @@ ${generatedProposal.taxChanges
                   <CardDescription className="mt-2">{generatedProposal.summary}</CardDescription>
                 </div>
                 <Badge variant={isBalanced ? "default" : "destructive"} className="text-lg px-4 py-2">
-                  {isBalanced ? "Balanced Budget" : `${formatLargeNumber(Math.abs(deficit) * 1000000000)} Deficit`}
+                  {isBalanced ? "Balanced Budget" : `$${Math.abs(deficit).toLocaleString()}B Deficit`}
                 </Badge>
               </div>
             </CardHeader>
@@ -303,22 +269,22 @@ ${generatedProposal.taxChanges
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span>Total Spending:</span>
-                        <span className="font-mono">{formatLargeNumber(totalSpending * 1000000000)}</span>
+                        <span className="font-mono">${totalSpending.toLocaleString()}B</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Total Revenue:</span>
-                        <span className="font-mono">{formatLargeNumber(totalRevenue * 1000000000)}</span>
+                        <span className="font-mono">${totalRevenue.toLocaleString()}B</span>
                       </div>
                       <div className="flex justify-between font-bold">
                         <span>Budget Balance:</span>
                         <span className={`font-mono ${isBalanced ? "text-green-600" : "text-red-600"}`}>
-                          {formatLargeNumber(deficit * 1000000000)}
+                          ${deficit.toLocaleString()}B
                         </span>
                       </div>
                       <div className="flex justify-between text-sm text-gray-600">
                         <span>Deficit Reduction:</span>
                         <span className="font-mono">
-                          {formatLargeNumber(generatedProposal.fiscalImpact.deficitReduction * 1000000000)}
+                          ${generatedProposal.fiscalImpact.deficitReduction.toLocaleString()}B
                         </span>
                       </div>
                     </div>
@@ -391,14 +357,12 @@ ${generatedProposal.taxChanges
                         <div>
                           <h4 className="font-medium">{item.category}</h4>
                           <p className="text-sm text-gray-600">
-                            {formatLargeNumber(item.current * 1000000000)} →{" "}
-                            {formatLargeNumber(item.proposed * 1000000000)}
+                            ${item.current.toLocaleString()}B → ${item.proposed.toLocaleString()}B
                           </p>
                         </div>
                         <div className="text-right">
                           <div className={`font-mono ${item.change > 0 ? "text-red-600" : "text-green-600"}`}>
-                            {item.change > 0 ? "+" : ""}
-                            {formatLargeNumber(item.change * 1000000000)}
+                            {item.change > 0 ? "+" : ""}${item.change.toLocaleString()}B
                           </div>
                           <div className="text-sm text-gray-600">{item.changePercent.toFixed(1)}%</div>
                         </div>
@@ -422,11 +386,11 @@ ${generatedProposal.taxChanges
                         <div>
                           <h4 className="font-medium">{policy.bracket}</h4>
                           <p className="text-sm text-gray-600">
-                            {formatPercentage(policy.currentRate)} → {formatPercentage(policy.proposedRate)}
+                            {(policy.currentRate * 100).toFixed(1)}% → {(policy.proposedRate * 100).toFixed(1)}%
                           </p>
                         </div>
                         <div className="text-right">
-                          <div className="font-mono">{formatLargeNumber(policy.revenue * 1000000000)}</div>
+                          <div className="font-mono">${policy.revenue.toLocaleString()}B</div>
                           <div className="text-sm text-gray-600">Annual Revenue</div>
                         </div>
                       </div>
@@ -536,10 +500,6 @@ ${generatedProposal.taxChanges
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="outline" onClick={onBack} className="flex items-center gap-2 bg-transparent">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
           <div className="flex items-center gap-4">
             <Progress value={(currentStep / 4) * 100} className="w-32" />
             <span className="text-sm text-gray-600">Step {currentStep} of 4</span>
@@ -620,9 +580,7 @@ ${generatedProposal.taxChanges
                       <div key={item.category} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <h4 className="font-medium">{item.category}</h4>
-                          <p className="text-sm text-gray-600">
-                            Current: {formatLargeNumber(item.current * 1000000000)}
-                          </p>
+                          <p className="text-sm text-gray-600">Current: ${item.current.toLocaleString()}B</p>
                         </div>
                         <div className="flex items-center gap-4">
                           <Input
@@ -662,7 +620,9 @@ ${generatedProposal.taxChanges
                       <div key={policy.bracket} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <h4 className="font-medium">{policy.bracket}</h4>
-                          <p className="text-sm text-gray-600">Current Rate: {formatPercentage(policy.currentRate)}</p>
+                          <p className="text-sm text-gray-600">
+                            Current Rate: {(policy.currentRate * 100).toFixed(1)}%
+                          </p>
                         </div>
                         <div className="flex items-center gap-4">
                           <Input
@@ -675,7 +635,7 @@ ${generatedProposal.taxChanges
                             className="w-24"
                           />
                           <div className="text-right min-w-[100px]">
-                            <div className="text-sm font-mono">{formatLargeNumber(policy.revenue * 1000000000)}</div>
+                            <div className="text-sm font-mono">${policy.revenue.toLocaleString()}B</div>
                             <div className="text-xs text-gray-500">Revenue</div>
                           </div>
                         </div>
@@ -699,20 +659,20 @@ ${generatedProposal.taxChanges
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <Card>
                       <CardContent className="pt-6">
-                        <div className="text-2xl font-bold">{formatLargeNumber(totalSpending * 1000000000)}</div>
+                        <div className="text-2xl font-bold">${totalSpending.toLocaleString()}B</div>
                         <div className="text-sm text-gray-600">Total Spending</div>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardContent className="pt-6">
-                        <div className="text-2xl font-bold">{formatLargeNumber(totalRevenue * 1000000000)}</div>
+                        <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}B</div>
                         <div className="text-sm text-gray-600">Total Revenue</div>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardContent className="pt-6">
                         <div className={`text-2xl font-bold ${isBalanced ? "text-green-600" : "text-red-600"}`}>
-                          {formatLargeNumber(Math.abs(deficit) * 1000000000)}
+                          ${Math.abs(deficit).toLocaleString()}B
                         </div>
                         <div className="text-sm text-gray-600">{isBalanced ? "Surplus" : "Deficit"}</div>
                       </CardContent>
@@ -729,7 +689,7 @@ ${generatedProposal.taxChanges
                       <>
                         <AlertTriangle className="h-6 w-6 text-yellow-600" />
                         <span className="text-yellow-600 font-medium">
-                          Deficit Reduced by {formatLargeNumber((2650 + deficit) * 1000000000)}
+                          Deficit Reduced by ${(2650 + deficit).toLocaleString()}B
                         </span>
                       </>
                     )}

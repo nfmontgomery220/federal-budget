@@ -2,686 +2,765 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
-import { ArrowLeft, AlertTriangle, Download, Calculator } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line } from "recharts"
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertTriangle, Target, BarChart3, Zap } from "lucide-react"
 
-// Tax policy scenarios data
-const taxPolicyData = {
-  2024: {
-    remainingGap: 1050, // After loopholes and enforcement
-    currentRates: {
-      individual: {
-        brackets: [
-          { min: 0, max: 11000, rate: 10, revenue: 89 },
-          { min: 11000, max: 44725, rate: 12, revenue: 234 },
-          { min: 44725, max: 95375, rate: 22, revenue: 456 },
-          { min: 95375, max: 182050, rate: 24, revenue: 389 },
-          { min: 182050, max: 231250, rate: 32, revenue: 267 },
-          { min: 231250, max: 578125, rate: 35, revenue: 334 },
-          { min: 578125, max: Number.POSITIVE_INFINITY, rate: 37, revenue: 273 },
-        ],
-        totalRevenue: 2042,
-      },
-      corporate: {
-        rate: 21,
-        revenue: 420,
-      },
-      capitalGains: {
-        rate: 20, // Top rate
-        revenue: 163,
-      },
+interface TaxScenario {
+  id: string
+  name: string
+  description: string
+  changes: {
+    individualRates: number[]
+    corporateRate: number
+    capitalGainsRate: number
+    estateRate: number
+  }
+  projectedRevenue: number
+  economicImpact: {
+    gdpEffect: number
+    employmentEffect: number
+    investmentEffect: number
+  }
+  politicalDifficulty: "Low" | "Medium" | "High" | "Extreme"
+  timeToImplement: string
+}
+
+const taxScenarios: TaxScenario[] = [
+  {
+    id: "current",
+    name: "Current Tax System (2025)",
+    description: "Existing tax rates after recent legislation",
+    changes: {
+      individualRates: [10, 12, 22, 24, 32, 35, 37],
+      corporateRate: 21,
+      capitalGainsRate: 20,
+      estateRate: 40,
     },
-    scenarios: [
-      {
-        name: "Progressive Approach",
-        description: "Focus on high earners and corporations",
-        totalRevenue: 1089,
-        economicImpact: -0.8,
-        politicalDifficulty: "High",
-        changes: [
-          { type: "Individual", description: "New 45% bracket >$400K", revenue: 234 },
-          { type: "Individual", description: "New 50% bracket >$1M", revenue: 156 },
-          { type: "Corporate", description: "Raise to 28%", revenue: 134 },
-          { type: "Capital Gains", description: "Treat as ordinary income >$1M", revenue: 89 },
-          { type: "Wealth Tax", description: "2% on net worth >$50M", revenue: 267 },
-          { type: "Financial Transaction", description: "0.1% on trades", revenue: 89 },
-          { type: "Carbon Tax", description: "$50/ton CO2", revenue: 120 },
-        ],
-      },
-      {
-        name: "Broad-Based Approach",
-        description: "Moderate increases across income levels",
-        totalRevenue: 1034,
-        economicImpact: -1.2,
-        politicalDifficulty: "Very High",
-        changes: [
-          { type: "Individual", description: "Raise all brackets by 3-5%", revenue: 456 },
-          { type: "Corporate", description: "Raise to 25%", revenue: 89 },
-          { type: "Payroll", description: "Remove SS cap, add 2% Medicare", revenue: 234 },
-          { type: "VAT", description: "5% Value Added Tax", revenue: 255 },
-        ],
-      },
-      {
-        name: "Innovation Approach",
-        description: "New tax bases and modern economy",
-        totalRevenue: 967,
-        economicImpact: -0.5,
-        politicalDifficulty: "Medium",
-        changes: [
-          { type: "Digital Services", description: "7% on tech giants", revenue: 89 },
-          { type: "Robot Tax", description: "Tax on automation", revenue: 45 },
-          { type: "Land Value", description: "Tax on land appreciation", revenue: 134 },
-          { type: "Financial Transaction", description: "0.05% on all trades", revenue: 67 },
-          { type: "Carbon Border", description: "Adjust for imports", revenue: 34 },
-          { type: "Wealth Tax", description: "1% on net worth >$10M", revenue: 178 },
-          { type: "Individual", description: "New 42% bracket >$500K", revenue: 234 },
-          { type: "Corporate", description: "Minimum 15% effective rate", revenue: 186 },
-        ],
-      },
-    ],
-    behavioralEffects: {
-      elasticities: {
-        highIncome: -0.4, // 10% tax increase = 4% income reduction
-        corporate: -0.25,
-        capitalGains: -0.8,
-        consumption: -0.15,
-      },
-      avoidanceRates: {
-        individual: 0.15, // 15% of theoretical revenue lost to avoidance
-        corporate: 0.25,
-        wealth: 0.35,
-        financial: 0.05,
-      },
+    projectedRevenue: 4550,
+    economicImpact: {
+      gdpEffect: 0,
+      employmentEffect: 0,
+      investmentEffect: 0,
     },
-    distributionalImpact: [
-      { percentile: "Bottom 20%", currentShare: 2.3, newShare: 1.8, impact: 0.2 },
-      { percentile: "20-40%", currentShare: 8.4, newShare: 7.9, impact: 0.8 },
-      { percentile: "40-60%", currentShare: 14.1, newShare: 13.2, impact: 1.4 },
-      { percentile: "60-80%", currentShare: 22.2, newShare: 21.1, impact: 2.8 },
-      { percentile: "80-95%", currentShare: 28.6, newShare: 27.8, impact: 4.2 },
-      { percentile: "95-99%", currentShare: 16.5, newShare: 18.9, impact: 8.9 },
-      { percentile: "Top 1%", currentShare: 7.9, newShare: 9.3, impact: 12.4 },
-    ],
+    politicalDifficulty: "Low",
+    timeToImplement: "Current",
   },
-}
-
-const revenueProjections = [
-  { year: 2025, baseline: 4900, progressive: 5989, broadBased: 5934, innovation: 5867 },
-  { year: 2026, baseline: 5145, progressive: 6234, broadBased: 6156, innovation: 6089 },
-  { year: 2027, baseline: 5401, progressive: 6489, broadBased: 6387, innovation: 6321 },
-  { year: 2028, baseline: 5671, progressive: 6756, broadBased: 6628, innovation: 6563 },
-  { year: 2029, baseline: 5955, progressive: 7035, broadBased: 6881, innovation: 6816 },
+  {
+    id: "progressive",
+    name: "Progressive Tax Reform",
+    description: "Higher rates on wealthy individuals and corporations",
+    changes: {
+      individualRates: [10, 12, 22, 28, 36, 42, 45],
+      corporateRate: 28,
+      capitalGainsRate: 28,
+      estateRate: 55,
+    },
+    projectedRevenue: 5420,
+    economicImpact: {
+      gdpEffect: -1.2,
+      employmentEffect: -0.8,
+      investmentEffect: -2.1,
+    },
+    politicalDifficulty: "High",
+    timeToImplement: "2-3 years",
+  },
+  {
+    id: "flat",
+    name: "Flat Tax System",
+    description: "Single rate for all income levels with simplified deductions",
+    changes: {
+      individualRates: [20, 20, 20, 20, 20, 20, 20],
+      corporateRate: 20,
+      capitalGainsRate: 20,
+      estateRate: 20,
+    },
+    projectedRevenue: 4180,
+    economicImpact: {
+      gdpEffect: 1.8,
+      employmentEffect: 1.2,
+      investmentEffect: 2.5,
+    },
+    politicalDifficulty: "Extreme",
+    timeToImplement: "5+ years",
+  },
+  {
+    id: "moderate",
+    name: "Moderate Reform",
+    description: "Balanced approach with modest increases on higher earners",
+    changes: {
+      individualRates: [10, 12, 22, 26, 34, 37, 39],
+      corporateRate: 25,
+      capitalGainsRate: 23,
+      estateRate: 45,
+    },
+    projectedRevenue: 4890,
+    economicImpact: {
+      gdpEffect: -0.4,
+      employmentEffect: -0.2,
+      investmentEffect: -0.8,
+    },
+    politicalDifficulty: "Medium",
+    timeToImplement: "1-2 years",
+  },
+  {
+    id: "supply-side",
+    name: "Supply-Side Cuts",
+    description: "Lower rates to stimulate economic growth",
+    changes: {
+      individualRates: [8, 10, 18, 20, 28, 30, 32],
+      corporateRate: 15,
+      capitalGainsRate: 15,
+      estateRate: 30,
+    },
+    projectedRevenue: 3890,
+    economicImpact: {
+      gdpEffect: 2.4,
+      employmentEffect: 1.8,
+      investmentEffect: 3.2,
+    },
+    politicalDifficulty: "High",
+    timeToImplement: "1-2 years",
+  },
 ]
 
-const economicImpacts = [
-  { scenario: "Progressive", gdpImpact: -0.8, employmentImpact: -0.3, investmentImpact: -1.2 },
-  { scenario: "Broad-Based", gdpImpact: -1.2, employmentImpact: -0.8, investmentImpact: -1.8 },
-  { scenario: "Innovation", gdpImpact: -0.5, employmentImpact: -0.1, investmentImpact: -0.7 },
-]
-
-interface TaxPolicyScenariosProps {
-  onBack?: () => void
-}
-
-export default function TaxPolicyScenarios({ onBack }: TaxPolicyScenariosProps) {
-  const [selectedYear, setSelectedYear] = useState("2024")
-  const [activeTab, setActiveTab] = useState("scenarios")
-  const [selectedScenario, setSelectedScenario] = useState("Progressive Approach")
+export default function TaxPolicyScenarios() {
+  const [selectedScenario, setSelectedScenario] = useState("current")
+  const [comparisonScenario, setComparisonScenario] = useState("progressive")
   const [customRates, setCustomRates] = useState({
-    topIndividual: 37,
-    corporate: 21,
-    capitalGains: 20,
-    wealthTax: 0,
+    individualRates: [10, 12, 22, 24, 32, 35, 37],
+    corporateRate: 21,
+    capitalGainsRate: 20,
+    estateRate: 40,
   })
 
-  const currentData = taxPolicyData[selectedYear as keyof typeof taxPolicyData]
-
-  const formatBillions = (amount: number) => `$${amount.toLocaleString()}B`
-  const formatPercent = (amount: number) => `${amount.toFixed(1)}%`
+  const currentScenario = taxScenarios.find((s) => s.id === selectedScenario) || taxScenarios[0]
+  const compareScenario = taxScenarios.find((s) => s.id === comparisonScenario) || taxScenarios[1]
 
   const calculateCustomRevenue = () => {
-    const individualIncrease = ((customRates.topIndividual - 37) / 37) * 273 * 0.6 // With behavioral effects
-    const corporateIncrease = ((customRates.corporate - 21) / 21) * 420 * 0.75 // With behavioral effects
-    const capitalGainsIncrease = ((customRates.capitalGains - 20) / 20) * 163 * 0.2 // High elasticity
-    const wealthTaxRevenue = customRates.wealthTax * 89 // Rough estimate per percentage point
+    // Simplified revenue calculation based on rate changes
+    const baseRevenue = 4550
+    const individualChange = (customRates.individualRates.reduce((a, b) => a + b, 0) / 7 - 24.6) / 24.6
+    const corporateChange = (customRates.corporateRate - 21) / 21
+    const capitalGainsChange = (customRates.capitalGainsRate - 20) / 20
 
-    return Math.max(0, individualIncrease + corporateIncrease + capitalGainsIncrease + wealthTaxRevenue)
+    return baseRevenue * (1 + individualChange * 0.6 + corporateChange * 0.15 + capitalGainsChange * 0.05)
   }
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
-      case "medium":
-        return "bg-yellow-100 text-yellow-800"
-      case "high":
-        return "bg-orange-100 text-orange-800"
-      case "very high":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
+  const customRevenue = calculateCustomRevenue()
+  const revenueChange = customRevenue - 4550
+  const deficitImpact = 2650 - revenueChange // Current deficit minus revenue change
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              {onBack && (
-                <Button variant="outline" size="sm" onClick={onBack}>
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back to Optimization
-                </Button>
-              )}
-              <h1 className="text-3xl font-bold text-gray-900">Tax Policy Scenarios</h1>
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Tax Policy Scenarios</h1>
+        <p className="text-gray-600">
+          Compare different tax policy approaches and their economic and political implications
+        </p>
+      </div>
+
+      {/* Scenario Selector */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        {taxScenarios.map((scenario) => (
+          <Button
+            key={scenario.id}
+            variant={selectedScenario === scenario.id ? "default" : "outline"}
+            onClick={() => setSelectedScenario(scenario.id)}
+            className="h-auto p-3 text-left"
+          >
+            <div>
+              <div className="font-medium text-sm">{scenario.name}</div>
+              <div className="text-xs opacity-75">${(scenario.projectedRevenue / 1000).toFixed(1)}T</div>
             </div>
-            <p className="text-gray-600">
-              Modeling tax increases to close the remaining ${formatBillions(currentData.remainingGap)} deficit gap
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2024">FY 2024</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export Analysis
-            </Button>
-          </div>
-        </div>
+          </Button>
+        ))}
+      </div>
 
-        {/* Key Challenge */}
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-800">
-              <AlertTriangle className="h-5 w-5" />
-              The Tax Increase Challenge
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-red-600">{formatBillions(1850)}</div>
-                <div className="text-sm text-red-700">Total Deficit</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-orange-600">{formatBillions(400)}</div>
-                <div className="text-sm text-orange-700">Loophole Closure</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-yellow-600">{formatBillions(400)}</div>
-                <div className="text-sm text-yellow-700">Enhanced Enforcement</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-red-600">{formatBillions(currentData.remainingGap)}</div>
-                <div className="text-sm text-red-700">Remaining Gap</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Main Content */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="comparison">Comparison</TabsTrigger>
+          <TabsTrigger value="custom">Custom Design</TabsTrigger>
+          <TabsTrigger value="analysis">Impact Analysis</TabsTrigger>
+        </TabsList>
 
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="scenarios">Policy Scenarios</TabsTrigger>
-            <TabsTrigger value="calculator">Tax Calculator</TabsTrigger>
-            <TabsTrigger value="impacts">Economic Impact</TabsTrigger>
-            <TabsTrigger value="distribution">Who Pays</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="scenarios" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {currentData.scenarios.map((scenario, index) => (
-                <Card key={index} className={selectedScenario === scenario.name ? "ring-2 ring-blue-500" : ""}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      {scenario.name}
-                      <Button
-                        variant={selectedScenario === scenario.name ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedScenario(scenario.name)}
-                      >
-                        Select
-                      </Button>
-                    </CardTitle>
-                    <CardDescription>{scenario.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-green-600">{formatBillions(scenario.totalRevenue)}</div>
-                        <div className="text-sm text-gray-600">Additional Revenue</div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-center">
-                        <div>
-                          <div className="text-lg font-bold text-red-600">{formatPercent(scenario.economicImpact)}</div>
-                          <div className="text-xs text-gray-600">GDP Impact</div>
-                        </div>
-                        <div>
-                          <Badge className={getDifficultyColor(scenario.politicalDifficulty)}>
-                            {scenario.politicalDifficulty}
-                          </Badge>
-                          <div className="text-xs text-gray-600 mt-1">Political Risk</div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-2">Key Changes:</h4>
-                        <div className="space-y-1 text-sm">
-                          {scenario.changes.slice(0, 4).map((change, changeIndex) => (
-                            <div key={changeIndex} className="flex justify-between">
-                              <span className="text-gray-600">{change.description}</span>
-                              <span className="font-medium">{formatBillions(change.revenue)}</span>
-                            </div>
-                          ))}
-                          {scenario.changes.length > 4 && (
-                            <div className="text-xs text-gray-500">+{scenario.changes.length - 4} more changes...</div>
-                          )}
-                        </div>
-                      </div>
+        <TabsContent value="overview" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    {currentScenario.name}
+                  </CardTitle>
+                  <CardDescription>{currentScenario.description}</CardDescription>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={
+                    currentScenario.politicalDifficulty === "Low"
+                      ? "border-green-300 text-green-700"
+                      : currentScenario.politicalDifficulty === "Medium"
+                        ? "border-yellow-300 text-yellow-700"
+                        : currentScenario.politicalDifficulty === "High"
+                          ? "border-orange-300 text-orange-700"
+                          : "border-red-300 text-red-700"
+                  }
+                >
+                  {currentScenario.politicalDifficulty} Difficulty
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div>
+                  <h4 className="font-medium mb-3">Revenue Impact</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Projected Revenue:</span>
+                      <span className="font-mono">${(currentScenario.projectedRevenue / 1000).toFixed(1)}T</span>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Change from Current:</span>
+                      <span
+                        className={`font-mono ${currentScenario.projectedRevenue > 4550 ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {currentScenario.projectedRevenue > 4550 ? "+" : ""}$
+                        {((currentScenario.projectedRevenue - 4550) / 1000).toFixed(1)}T
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Deficit Impact:</span>
+                      <span
+                        className={`font-mono ${currentScenario.projectedRevenue > 4550 ? "text-green-600" : "text-red-600"}`}
+                      >
+                        ${((2650 - (currentScenario.projectedRevenue - 4550)) / 1000).toFixed(1)}T
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Detailed Scenario Breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{selectedScenario} - Detailed Analysis</CardTitle>
-                <CardDescription>Complete breakdown of tax changes and revenue projections</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const scenario = currentData.scenarios.find((s) => s.name === selectedScenario)
-                  if (!scenario) return null
+                <div>
+                  <h4 className="font-medium mb-3">Tax Rates</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Top Individual Rate:</span>
+                      <span className="font-mono">{currentScenario.changes.individualRates[6]}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Corporate Rate:</span>
+                      <span className="font-mono">{currentScenario.changes.corporateRate}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Capital Gains Rate:</span>
+                      <span className="font-mono">{currentScenario.changes.capitalGainsRate}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Estate Tax Rate:</span>
+                      <span className="font-mono">{currentScenario.changes.estateRate}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-3">Economic Impact</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">GDP Effect:</span>
+                      <span
+                        className={`font-mono ${currentScenario.economicImpact.gdpEffect >= 0 ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {currentScenario.economicImpact.gdpEffect >= 0 ? "+" : ""}
+                        {currentScenario.economicImpact.gdpEffect}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Employment Effect:</span>
+                      <span
+                        className={`font-mono ${currentScenario.economicImpact.employmentEffect >= 0 ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {currentScenario.economicImpact.employmentEffect >= 0 ? "+" : ""}
+                        {currentScenario.economicImpact.employmentEffect}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Investment Effect:</span>
+                      <span
+                        className={`font-mono ${currentScenario.economicImpact.investmentEffect >= 0 ? "text-green-600" : "text-red-600"}`}
+                      >
+                        {currentScenario.economicImpact.investmentEffect >= 0 ? "+" : ""}
+                        {currentScenario.economicImpact.investmentEffect}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Implementation:</span>
+                      <span className="font-mono text-gray-600">{currentScenario.timeToImplement}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Individual Tax Brackets Visualization */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Individual Tax Brackets</CardTitle>
+              <CardDescription>Tax rates by income level</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {currentScenario.changes.individualRates.map((rate, index) => {
+                  const brackets = [
+                    "$0 - $11,000",
+                    "$11,001 - $44,725",
+                    "$44,726 - $95,375",
+                    "$95,376 - $182,050",
+                    "$182,051 - $231,250",
+                    "$231,251 - $578,125",
+                    "Over $578,125",
+                  ]
 
                   return (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-medium mb-4">Tax Changes</h4>
-                        <div className="space-y-3">
-                          {scenario.changes.map((change, index) => (
-                            <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                              <div>
-                                <div className="font-medium text-sm">{change.description}</div>
-                                <div className="text-xs text-gray-600">{change.type}</div>
-                              </div>
-                              <div className="font-bold text-green-600">{formatBillions(change.revenue)}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-4">Implementation Considerations</h4>
-                        <div className="space-y-3">
-                          <div className="p-3 bg-blue-50 rounded-lg">
-                            <h5 className="font-medium text-blue-900">Revenue Reliability</h5>
-                            <p className="text-sm text-blue-700">
-                              {scenario.name === "Progressive Approach" &&
-                                "High reliability from wealthy taxpayers, but subject to behavioral responses"}
-                              {scenario.name === "Broad-Based Approach" &&
-                                "Very reliable revenue base, but significant middle-class impact"}
-                              {scenario.name === "Innovation Approach" &&
-                                "Moderate reliability, depends on new tax base development"}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-yellow-50 rounded-lg">
-                            <h5 className="font-medium text-yellow-900">Economic Effects</h5>
-                            <p className="text-sm text-yellow-700">
-                              GDP impact: {formatPercent(scenario.economicImpact)} due to reduced consumption and
-                              investment
-                            </p>
-                          </div>
-                          <div className="p-3 bg-red-50 rounded-lg">
-                            <h5 className="font-medium text-red-900">Political Challenges</h5>
-                            <p className="text-sm text-red-700">
-                              {scenario.politicalDifficulty} difficulty - requires significant legislative coalition
-                              building
-                            </p>
-                          </div>
-                        </div>
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <span className="font-medium">{brackets[index]}</span>
+                      <div className="flex items-center gap-4">
+                        <Progress value={(rate / 50) * 100} className="w-24 h-2" />
+                        <span className="font-mono w-12 text-right">{rate}%</span>
                       </div>
                     </div>
                   )
-                })()}
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="comparison" className="space-y-4">
+          <div className="flex gap-4 mb-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Compare Scenario:</label>
+              <select
+                value={comparisonScenario}
+                onChange={(e) => setComparisonScenario(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                {taxScenarios
+                  .filter((s) => s.id !== selectedScenario)
+                  .map((scenario) => (
+                    <option key={scenario.id} value={scenario.id}>
+                      {scenario.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-blue-900">{currentScenario.name}</CardTitle>
+                <CardDescription>{currentScenario.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-800">
+                        ${(currentScenario.projectedRevenue / 1000).toFixed(1)}T
+                      </div>
+                      <div className="text-sm text-blue-600">Revenue</div>
+                    </div>
+                    <div className="text-center p-3 bg-blue-50 rounded-lg">
+                      <div
+                        className={`text-2xl font-bold ${currentScenario.economicImpact.gdpEffect >= 0 ? "text-green-800" : "text-red-800"}`}
+                      >
+                        {currentScenario.economicImpact.gdpEffect >= 0 ? "+" : ""}
+                        {currentScenario.economicImpact.gdpEffect}%
+                      </div>
+                      <div className="text-sm text-blue-600">GDP Impact</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Top Individual Rate:</span>
+                      <span className="font-mono">{currentScenario.changes.individualRates[6]}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Corporate Rate:</span>
+                      <span className="font-mono">{currentScenario.changes.corporateRate}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Political Difficulty:</span>
+                      <Badge variant="outline">{currentScenario.politicalDifficulty}</Badge>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="calculator" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-green-900">{compareScenario.name}</CardTitle>
+                <CardDescription>{compareScenario.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-800">
+                        ${(compareScenario.projectedRevenue / 1000).toFixed(1)}T
+                      </div>
+                      <div className="text-sm text-green-600">Revenue</div>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div
+                        className={`text-2xl font-bold ${compareScenario.economicImpact.gdpEffect >= 0 ? "text-green-800" : "text-red-800"}`}
+                      >
+                        {compareScenario.economicImpact.gdpEffect >= 0 ? "+" : ""}
+                        {compareScenario.economicImpact.gdpEffect}%
+                      </div>
+                      <div className="text-sm text-green-600">GDP Impact</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Top Individual Rate:</span>
+                      <span className="font-mono">{compareScenario.changes.individualRates[6]}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Corporate Rate:</span>
+                      <span className="font-mono">{compareScenario.changes.corporateRate}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Political Difficulty:</span>
+                      <Badge variant="outline">{compareScenario.politicalDifficulty}</Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Comparison Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Comparison Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="text-center p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Revenue Difference</h4>
+                  <div
+                    className={`text-2xl font-bold ${compareScenario.projectedRevenue > currentScenario.projectedRevenue ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {compareScenario.projectedRevenue > currentScenario.projectedRevenue ? "+" : ""}$
+                    {((compareScenario.projectedRevenue - currentScenario.projectedRevenue) / 1000).toFixed(1)}T
+                  </div>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">GDP Impact Difference</h4>
+                  <div
+                    className={`text-2xl font-bold ${compareScenario.economicImpact.gdpEffect > currentScenario.economicImpact.gdpEffect ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {compareScenario.economicImpact.gdpEffect > currentScenario.economicImpact.gdpEffect ? "+" : ""}
+                    {(compareScenario.economicImpact.gdpEffect - currentScenario.economicImpact.gdpEffect).toFixed(1)}%
+                  </div>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Rate Difference</h4>
+                  <div className="text-2xl font-bold text-gray-800">
+                    {compareScenario.changes.individualRates[6] - currentScenario.changes.individualRates[6] > 0
+                      ? "+"
+                      : ""}
+                    {compareScenario.changes.individualRates[6] - currentScenario.changes.individualRates[6]}%
+                  </div>
+                  <div className="text-sm text-gray-600">Top bracket</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="custom" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Design Your Own Tax Policy</CardTitle>
+              <CardDescription>Adjust tax rates to see the projected impact</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Individual Tax Brackets */}
+                <div>
+                  <h4 className="font-medium mb-4">Individual Tax Brackets</h4>
+                  <div className="space-y-4">
+                    {customRates.individualRates.map((rate, index) => {
+                      const brackets = [
+                        "$0 - $11,000",
+                        "$11,001 - $44,725",
+                        "$44,726 - $95,375",
+                        "$95,376 - $182,050",
+                        "$182,051 - $231,250",
+                        "$231,251 - $578,125",
+                        "Over $578,125",
+                      ]
+
+                      return (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                          <span className="font-medium w-48">{brackets[index]}</span>
+                          <div className="flex items-center gap-4 flex-1">
+                            <Slider
+                              value={[rate]}
+                              onValueChange={(value) => {
+                                const newRates = [...customRates.individualRates]
+                                newRates[index] = value[0]
+                                setCustomRates({ ...customRates, individualRates: newRates })
+                              }}
+                              min={0}
+                              max={50}
+                              step={0.5}
+                              className="flex-1"
+                            />
+                            <span className="font-mono w-12 text-right">{rate}%</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Other Tax Rates */}
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Corporate Tax Rate</label>
+                    <div className="flex items-center gap-4">
+                      <Slider
+                        value={[customRates.corporateRate]}
+                        onValueChange={(value) => setCustomRates({ ...customRates, corporateRate: value[0] })}
+                        min={10}
+                        max={40}
+                        step={0.5}
+                        className="flex-1"
+                      />
+                      <span className="font-mono w-12">{customRates.corporateRate}%</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Capital Gains Rate</label>
+                    <div className="flex items-center gap-4">
+                      <Slider
+                        value={[customRates.capitalGainsRate]}
+                        onValueChange={(value) => setCustomRates({ ...customRates, capitalGainsRate: value[0] })}
+                        min={0}
+                        max={40}
+                        step={0.5}
+                        className="flex-1"
+                      />
+                      <span className="font-mono w-12">{customRates.capitalGainsRate}%</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Estate Tax Rate</label>
+                    <div className="flex items-center gap-4">
+                      <Slider
+                        value={[customRates.estateRate]}
+                        onValueChange={(value) => setCustomRates({ ...customRates, estateRate: value[0] })}
+                        min={0}
+                        max={60}
+                        step={1}
+                        className="flex-1"
+                      />
+                      <span className="font-mono w-12">{customRates.estateRate}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Custom Results */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Custom Tax Policy Results</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-800">${(customRevenue / 1000).toFixed(1)}T</div>
+                  <div className="text-sm text-blue-600">Projected Revenue</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className={`text-2xl font-bold ${revenueChange >= 0 ? "text-green-800" : "text-red-800"}`}>
+                    {revenueChange >= 0 ? "+" : ""}${(revenueChange / 1000).toFixed(1)}T
+                  </div>
+                  <div className="text-sm text-green-600">Revenue Change</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-800">${(deficitImpact / 1000).toFixed(1)}T</div>
+                  <div className="text-sm text-purple-600">Remaining Deficit</div>
+                </div>
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-800">
+                    {((Math.abs(revenueChange) / 2650) * 100).toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-orange-600">Deficit Impact</div>
+                </div>
+              </div>
+
+              {Math.abs(revenueChange) > 100 && (
+                <Alert
+                  className={revenueChange > 0 ? "border-green-200 bg-green-50 mt-4" : "border-red-200 bg-red-50 mt-4"}
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Impact Analysis:</strong>
+                    {revenueChange > 0 ? (
+                      <span className="text-green-800">
+                        Your tax policy would increase federal revenue by ${(Math.abs(revenueChange) / 1000).toFixed(1)}
+                        T annually, reducing the deficit by {((Math.abs(revenueChange) / 2650) * 100).toFixed(1)}%.
+                      </span>
+                    ) : (
+                      <span className="text-red-800">
+                        Your tax policy would decrease federal revenue by ${(Math.abs(revenueChange) / 1000).toFixed(1)}
+                        T annually, increasing the deficit by {((Math.abs(revenueChange) / 2650) * 100).toFixed(1)}%.
+                      </span>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analysis" className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  Custom Tax Rate Calculator
+                  <BarChart3 className="h-5 w-5" />
+                  Revenue Analysis
                 </CardTitle>
-                <CardDescription>Adjust tax rates to see revenue impact (includes behavioral effects)</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Top Individual Rate: {customRates.topIndividual}% (Current: 37%)
-                      </label>
-                      <Slider
-                        value={[customRates.topIndividual]}
-                        onValueChange={(value) => setCustomRates({ ...customRates, topIndividual: value[0] })}
-                        max={60}
-                        min={30}
-                        step={1}
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Corporate Rate: {customRates.corporate}% (Current: 21%)
-                      </label>
-                      <Slider
-                        value={[customRates.corporate]}
-                        onValueChange={(value) => setCustomRates({ ...customRates, corporate: value[0] })}
-                        max={35}
-                        min={15}
-                        step={1}
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Capital Gains Rate: {customRates.capitalGains}% (Current: 20%)
-                      </label>
-                      <Slider
-                        value={[customRates.capitalGains]}
-                        onValueChange={(value) => setCustomRates({ ...customRates, capitalGains: value[0] })}
-                        max={40}
-                        min={15}
-                        step={1}
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Wealth Tax Rate: {customRates.wealthTax}% (Current: 0%)
-                      </label>
-                      <Slider
-                        value={[customRates.wealthTax]}
-                        onValueChange={(value) => setCustomRates({ ...customRates, wealthTax: value[0] })}
-                        max={5}
-                        min={0}
-                        step={0.1}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <h4 className="font-medium text-green-900">Revenue Impact</h4>
-                      <div className="text-2xl font-bold text-green-600">
-                        {formatBillions(calculateCustomRevenue())}
+                <div className="space-y-4">
+                  {taxScenarios.map((scenario) => (
+                    <div key={scenario.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">{scenario.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {scenario.id === "current"
+                            ? "Baseline"
+                            : scenario.projectedRevenue > 4550
+                              ? `+${((scenario.projectedRevenue - 4550) / 1000).toFixed(1)}T`
+                              : `${((scenario.projectedRevenue - 4550) / 1000).toFixed(1)}T`}
+                        </p>
                       </div>
-                      <p className="text-sm text-green-700">Additional annual revenue</p>
-                    </div>
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-medium text-blue-900">Gap Closure</h4>
-                      <div className="text-xl font-bold text-blue-600">
-                        {formatPercent((calculateCustomRevenue() / currentData.remainingGap) * 100)}
+                      <div className="text-right">
+                        <div className="font-mono">${(scenario.projectedRevenue / 1000).toFixed(1)}T</div>
+                        <Progress value={(scenario.projectedRevenue / 6000) * 100} className="w-20 h-2 mt-1" />
                       </div>
-                      <p className="text-sm text-blue-700">Of remaining deficit closed</p>
                     </div>
-                    <div className="p-4 bg-yellow-50 rounded-lg">
-                      <h4 className="font-medium text-yellow-900">Behavioral Effects Included</h4>
-                      <ul className="text-sm text-yellow-700 space-y-1">
-                        <li>• High earners reduce reported income</li>
-                        <li>• Corporations shift profits/investments</li>
-                        <li>• Capital gains timing effects</li>
-                        <li>• Wealth tax avoidance strategies</li>
-                      </ul>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="impacts" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Economic Impact Comparison</CardTitle>
-                  <CardDescription>GDP, employment, and investment effects by scenario</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      gdpImpact: { label: "GDP Impact", color: "hsl(var(--chart-1))" },
-                      employmentImpact: { label: "Employment Impact", color: "hsl(var(--chart-2))" },
-                      investmentImpact: { label: "Investment Impact", color: "hsl(var(--chart-3))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={economicImpacts}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="scenario" />
-                        <YAxis />
-                        <ChartTooltip
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                  <p className="font-medium">{label}</p>
-                                  {payload.map((entry, index) => (
-                                    <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                      {entry.name}: {formatPercent(entry.value as number)}
-                                    </p>
-                                  ))}
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Bar dataKey="gdpImpact" fill="var(--color-gdpImpact)" />
-                        <Bar dataKey="employmentImpact" fill="var(--color-employmentImpact)" />
-                        <Bar dataKey="investmentImpact" fill="var(--color-investmentImpact)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenue Projections</CardTitle>
-                  <CardDescription>5-year revenue outlook by scenario</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      baseline: { label: "Baseline", color: "hsl(var(--chart-1))" },
-                      progressive: { label: "Progressive", color: "hsl(var(--chart-2))" },
-                      broadBased: { label: "Broad-Based", color: "hsl(var(--chart-3))" },
-                      innovation: { label: "Innovation", color: "hsl(var(--chart-4))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={revenueProjections}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis />
-                        <ChartTooltip
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                  <p className="font-medium">{label}</p>
-                                  {payload.map((entry, index) => (
-                                    <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                      {entry.name}: {formatBillions(entry.value as number)}
-                                    </p>
-                                  ))}
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Line type="monotone" dataKey="baseline" stroke="var(--color-baseline)" strokeWidth={2} />
-                        <Line type="monotone" dataKey="progressive" stroke="var(--color-progressive)" strokeWidth={2} />
-                        <Line type="monotone" dataKey="broadBased" stroke="var(--color-broadBased)" strokeWidth={2} />
-                        <Line type="monotone" dataKey="innovation" stroke="var(--color-innovation)" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-            </div>
 
             <Card>
               <CardHeader>
-                <CardTitle>Key Economic Considerations</CardTitle>
-                <CardDescription>Critical factors affecting revenue and growth</CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-red-50 rounded-lg">
-                  <h4 className="font-medium text-red-900">Behavioral Responses</h4>
-                  <p className="text-sm text-red-700 mt-1">
-                    High earners may reduce work, relocate, or restructure income. Corporate inversions and
-                    profit-shifting increase.
-                  </p>
-                </div>
-                <div className="p-4 bg-yellow-50 rounded-lg">
-                  <h4 className="font-medium text-yellow-900">Dynamic Effects</h4>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Tax increases reduce economic growth, which partially offsets revenue gains. Multiplier effects vary
-                    by tax type.
-                  </p>
-                </div>
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900">Implementation Challenges</h4>
-                  <p className="text-sm text-blue-700 mt-1">
-                    New taxes require administrative capacity. Wealth taxes face valuation issues. International
-                    coordination needed.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="distribution" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tax Burden Distribution</CardTitle>
-                <CardDescription>How different income groups would be affected</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Economic Impact
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer
-                  config={{
-                    currentShare: { label: "Current Share", color: "hsl(var(--chart-1))" },
-                    newShare: { label: "New Share", color: "hsl(var(--chart-2))" },
-                  }}
-                  className="h-[400px]"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={currentData.distributionalImpact}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="percentile" angle={-45} textAnchor="end" height={80} />
-                      <YAxis />
-                      <ChartTooltip
-                        content={({ active, payload, label }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload
-                            return (
-                              <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                <p className="font-medium">{label}</p>
-                                <p className="text-sm">Current: {formatPercent(data.currentShare)}</p>
-                                <p className="text-sm">New: {formatPercent(data.newShare)}</p>
-                                <p className="text-sm">Impact: {formatPercent(data.impact)} of income</p>
-                              </div>
-                            )
-                          }
-                          return null
-                        }}
-                      />
-                      <Bar dataKey="currentShare" fill="var(--color-currentShare)" />
-                      <Bar dataKey="newShare" fill="var(--color-newShare)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Progressive Impact Analysis</CardTitle>
-                  <CardDescription>Tax burden changes by income level</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {currentData.distributionalImpact.map((group, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div className="space-y-4">
+                  {taxScenarios.map((scenario) => (
+                    <div key={scenario.id} className="border rounded-lg p-3">
+                      <h4 className="font-medium mb-2">{scenario.name}</h4>
+                      <div className="grid grid-cols-3 gap-2 text-sm">
                         <div>
-                          <div className="font-medium text-sm">{group.percentile}</div>
-                          <div className="text-xs text-gray-600">Income Group</div>
-                        </div>
-                        <div className="text-right">
+                          <div className="text-gray-600">GDP</div>
                           <div
-                            className={`font-bold text-sm ${group.impact > 5 ? "text-red-600" : group.impact > 2 ? "text-yellow-600" : "text-green-600"}`}
+                            className={`font-mono ${scenario.economicImpact.gdpEffect >= 0 ? "text-green-600" : "text-red-600"}`}
                           >
-                            {formatPercent(group.impact)}
+                            {scenario.economicImpact.gdpEffect >= 0 ? "+" : ""}
+                            {scenario.economicImpact.gdpEffect}%
                           </div>
-                          <div className="text-xs text-gray-600">of income</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600">Jobs</div>
+                          <div
+                            className={`font-mono ${scenario.economicImpact.employmentEffect >= 0 ? "text-green-600" : "text-red-600"}`}
+                          >
+                            {scenario.economicImpact.employmentEffect >= 0 ? "+" : ""}
+                            {scenario.economicImpact.employmentEffect}%
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-600">Investment</div>
+                          <div
+                            className={`font-mono ${scenario.economicImpact.investmentEffect >= 0 ? "text-green-600" : "text-red-600"}`}
+                          >
+                            {scenario.economicImpact.investmentEffect >= 0 ? "+" : ""}
+                            {scenario.economicImpact.investmentEffect}%
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Fairness Considerations</CardTitle>
-                  <CardDescription>Distributional impact analysis</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <h4 className="font-medium text-green-900">Progressive Structure</h4>
-                    <p className="text-sm text-green-700 mt-1">
-                      Top 1% bears 12.4% burden vs 7.9% current share, maintaining progressive taxation principle.
-                    </p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Implementation Feasibility</CardTitle>
+              <CardDescription>Political difficulty and timeline for each scenario</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {taxScenarios.map((scenario) => (
+                  <div key={scenario.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">{scenario.name}</h4>
+                      <p className="text-sm text-gray-600">{scenario.description}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Badge
+                        variant="outline"
+                        className={
+                          scenario.politicalDifficulty === "Low"
+                            ? "border-green-300 text-green-700"
+                            : scenario.politicalDifficulty === "Medium"
+                              ? "border-yellow-300 text-yellow-700"
+                              : scenario.politicalDifficulty === "High"
+                                ? "border-orange-300 text-orange-700"
+                                : "border-red-300 text-red-700"
+                        }
+                      >
+                        {scenario.politicalDifficulty}
+                      </Badge>
+                      <span className="text-sm text-gray-600 w-20">{scenario.timeToImplement}</span>
+                    </div>
                   </div>
-                  <div className="p-3 bg-yellow-50 rounded-lg">
-                    <h4 className="font-medium text-yellow-900">Middle Class Impact</h4>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      Middle quintiles see modest increases (1-3% of income), but benefit from deficit reduction.
-                    </p>
-                  </div>
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-900">Economic Mobility</h4>
-                    <p className="text-sm text-blue-700 mt-1">
-                      Higher taxes on wealth may reduce inequality but could affect entrepreneurship and investment.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

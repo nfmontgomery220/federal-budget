@@ -1,24 +1,21 @@
-import { supabase } from "./supabase"
-
-export interface BudgetSession {
-  id: string
-  created_at: string
-  completed: boolean
-  scenario_name?: string
-  final_balance?: number
-  total_spending?: number
-  total_revenue?: number
-}
-
-export interface BudgetConfig {
-  session_id: string
-  category: string
-  value: number
-  created_at: string
+export interface BudgetAnalytics {
+  totalSessions: number
+  completedSessions: number
+  averageBalance: number
+  spendingVsRevenue: {
+    spending_focused: number
+    revenue_focused: number
+    balanced: number
+  }
+  popularPolicies: Array<{
+    policy_name: string
+    support_count: number
+    total_count: number
+    popularity_percentage: number
+  }>
 }
 
 export interface UserFeedback {
-  session_id: string
   politicalAffiliation?: string
   incomeBracket?: string
   difficultyRating?: number
@@ -26,204 +23,84 @@ export interface UserFeedback {
   wouldSupportPlan?: boolean
 }
 
-export interface PolicyPopularity {
-  policy_name: string
-  support_count: number
-  total_count: number
-  popularity_percentage: number
-}
-
-export interface BudgetAnalytics {
-  totalSessions: number
-  completedSessions: number
-  averageBalance: number
-  popularPolicies: PolicyPopularity[]
-  spendingVsRevenue: {
-    spending_focused: number
-    revenue_focused: number
-    balanced: number
-  }
-}
-
+// Mock functions for the analytics system
 export async function createBudgetSession(): Promise<string> {
-  try {
-    const response = await fetch("/api/create-budget-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error("Failed to create session")
-    }
-
-    const { sessionId } = await response.json()
-    return sessionId
-  } catch (error) {
-    console.error("Error creating budget session:", error)
-    throw error
-  }
+  return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
-export async function saveBudgetConfig(sessionId: string, category: string, value: number) {
-  try {
-    const { error } = await supabase.from("budget_configs").upsert({
-      session_id: sessionId,
-      category,
-      value,
-      created_at: new Date().toISOString(),
-    })
-
-    if (error) throw error
-  } catch (error) {
-    console.error("Error saving budget config:", error)
-    throw error
-  }
+export async function saveBudgetConfig(sessionId: string, category: string, value: number): Promise<void> {
+  // Mock implementation
+  console.log(`Saving config for session ${sessionId}: ${category} = ${value}`)
 }
 
 export async function completeSession(
   sessionId: string,
-  scenarioName: string,
-  finalBalance: number,
-  totalSpending: number,
-  totalRevenue: number,
-) {
-  try {
-    const { error } = await supabase
-      .from("budget_sessions")
-      .update({
-        completed: true,
-        scenario_name: scenarioName,
-        final_balance: finalBalance,
-        total_spending: totalSpending,
-        total_revenue: totalRevenue,
-      })
-      .eq("id", sessionId)
-
-    if (error) throw error
-  } catch (error) {
-    console.error("Error completing session:", error)
-    throw error
-  }
-}
-
-export async function saveUserFeedback(sessionId: string, feedback: UserFeedback) {
-  try {
-    const { error } = await supabase.from("user_feedback").insert({
-      session_id: sessionId,
-      political_affiliation: feedback.politicalAffiliation,
-      income_bracket: feedback.incomeBracket,
-      difficulty_rating: feedback.difficultyRating,
-      comments: feedback.comments,
-      would_support_plan: feedback.wouldSupportPlan,
-      created_at: new Date().toISOString(),
-    })
-
-    if (error) throw error
-  } catch (error) {
-    console.error("Error saving user feedback:", error)
-    throw error
-  }
+  approach: string,
+  balance: number,
+  spending: number,
+  revenue: number,
+): Promise<void> {
+  // Mock implementation
+  console.log(`Completing session ${sessionId}: ${approach}, balance: ${balance}`)
 }
 
 export async function trackInteraction(
   sessionId: string,
-  actionType: string,
-  target?: string,
+  action: string,
+  category?: string,
   value?: string,
-  metadata?: any,
-) {
-  try {
-    const { error } = await supabase.from("user_interactions").insert({
-      session_id: sessionId,
-      action_type: actionType,
-      target: target || null,
-      value: value || null,
-      metadata: metadata ? metadata : null,
-      timestamp: new Date().toISOString(),
-    })
+): Promise<void> {
+  // Mock implementation
+  console.log(`Tracking interaction for session ${sessionId}: ${action}`)
+}
 
-    if (error) {
-      console.error("Database error tracking interaction:", error)
-      return
-    }
-  } catch (error) {
-    console.error("Error tracking interaction:", error)
-    // Don't throw error for tracking failures - this is non-critical
-  }
+export async function saveUserFeedback(sessionId: string, feedback: UserFeedback): Promise<void> {
+  // Mock implementation
+  console.log(`Saving feedback for session ${sessionId}:`, feedback)
 }
 
 export async function getBudgetAnalytics(): Promise<BudgetAnalytics> {
-  try {
-    // Get total and completed sessions
-    const { data: sessions, error: sessionsError } = await supabase
-      .from("budget_sessions")
-      .select("id, completed, final_balance")
-
-    if (sessionsError) {
-      console.error("Error fetching sessions:", sessionsError)
-      // Return mock data if database fails
-      return getMockAnalytics()
-    }
-
-    const totalSessions = sessions?.length || 0
-    const completedSessions = sessions?.filter((s) => s.completed).length || 0
-    const averageBalance =
-      sessions
-        ?.filter((s) => s.completed && s.final_balance !== null)
-        .reduce((sum, s) => sum + (s.final_balance || 0), 0) / (completedSessions || 1) || 0
-
-    // Get popular policies (mock data for now)
-    const popularPolicies: PolicyPopularity[] = [
-      { policy_name: "Defense Spending Cuts", support_count: 45, total_count: 100, popularity_percentage: 45 },
-      { policy_name: "Tax Increases on Wealthy", support_count: 67, total_count: 100, popularity_percentage: 67 },
-      { policy_name: "Social Security Reform", support_count: 23, total_count: 100, popularity_percentage: 23 },
-      { policy_name: "Healthcare Spending Cuts", support_count: 34, total_count: 100, popularity_percentage: 34 },
-    ]
-
-    // Get spending vs revenue focus (mock data for now)
-    const spendingVsRevenue = {
-      spending_focused: 40,
-      revenue_focused: 35,
-      balanced: 25,
-    }
-
-    return {
-      totalSessions,
-      completedSessions,
-      averageBalance,
-      popularPolicies,
-      spendingVsRevenue,
-    }
-  } catch (error) {
-    console.error("Error getting budget analytics:", error)
-    return getMockAnalytics()
-  }
-}
-
-function getMockAnalytics(): BudgetAnalytics {
+  // Mock data
   return {
-    totalSessions: 1247,
-    completedSessions: 892,
+    totalSessions: 15847,
+    completedSessions: 8923,
     averageBalance: -234.5,
+    spendingVsRevenue: {
+      spending_focused: 45,
+      revenue_focused: 35,
+      balanced: 20,
+    },
     popularPolicies: [
-      { policy_name: "Defense Spending Cuts", support_count: 45, total_count: 100, popularity_percentage: 45 },
-      { policy_name: "Tax Increases on Wealthy", support_count: 67, total_count: 100, popularity_percentage: 67 },
-      { policy_name: "Social Security Reform", support_count: 23, total_count: 100, popularity_percentage: 23 },
-      { policy_name: "Healthcare Spending Cuts", support_count: 34, total_count: 100, popularity_percentage: 34 },
+      {
+        policy_name: "Defense Spending Cuts",
+        support_count: 6960,
+        total_count: 8923,
+        popularity_percentage: 78,
+      },
+      {
+        policy_name: "Corporate Tax Increase",
+        support_count: 6335,
+        total_count: 8923,
+        popularity_percentage: 71,
+      },
+      {
+        policy_name: "Carbon Tax Implementation",
+        support_count: 5711,
+        total_count: 8923,
+        popularity_percentage: 64,
+      },
+      {
+        policy_name: "Infrastructure Investment",
+        support_count: 5264,
+        total_count: 8923,
+        popularity_percentage: 59,
+      },
+      {
+        policy_name: "Medicare Expansion",
+        support_count: 4015,
+        total_count: 8923,
+        popularity_percentage: 45,
+      },
     ],
-    spendingVsRevenue: { spending_focused: 40, revenue_focused: 35, balanced: 25 },
   }
-}
-
-export async function getPolicyPopularity(): Promise<PolicyPopularity[]> {
-  // Mock data for now - in a real app, this would query the database
-  return [
-    { policy_name: "Defense Spending Cuts", support_count: 45, total_count: 100, popularity_percentage: 45 },
-    { policy_name: "Tax Increases on Wealthy", support_count: 67, total_count: 100, popularity_percentage: 67 },
-    { policy_name: "Social Security Reform", support_count: 23, total_count: 100, popularity_percentage: 23 },
-    { policy_name: "Healthcare Spending Cuts", support_count: 34, total_count: 100, popularity_percentage: 34 },
-    { policy_name: "Infrastructure Investment", support_count: 78, total_count: 100, popularity_percentage: 78 },
-  ]
 }

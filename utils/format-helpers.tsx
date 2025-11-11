@@ -8,33 +8,41 @@ export const formatCurrency = (amount: number): string => {
 }
 
 export const formatBillions = (amount: number): string => {
-  return `$${(amount / 1000).toFixed(1)}T`
+  return `$${amount.toLocaleString()}B`
 }
 
 export const formatPercent = (value: number): string => {
   return `${value.toFixed(1)}%`
 }
 
-export const formatPercentage = (value: number): string => {
-  return `${(value * 100).toFixed(1)}%`
+export const formatPercentage = (num: number): string => {
+  return `${(num * 100).toFixed(1)}%`
 }
 
 export const formatLargeNumber = (num: number): string => {
-  if (num >= 1000000000000) {
-    return `$${(num / 1000000000000).toFixed(1)}T`
-  } else if (num >= 1000000000) {
-    return `$${(num / 1000000000).toFixed(1)}B`
-  } else if (num >= 1000000) {
-    return `$${(num / 1000000).toFixed(1)}M`
-  } else if (num >= 1000) {
-    return `$${(num / 1000).toFixed(1)}K`
+  if (Math.abs(num) >= 1e12) {
+    return `$${(num / 1e12).toFixed(1)}T`
+  } else if (Math.abs(num) >= 1e9) {
+    return `$${(num / 1e9).toFixed(1)}B`
+  } else if (Math.abs(num) >= 1e6) {
+    return `$${(num / 1e6).toFixed(1)}M`
+  } else if (Math.abs(num) >= 1e3) {
+    return `$${(num / 1e3).toFixed(1)}K`
   } else {
     return `$${num.toFixed(0)}`
   }
 }
 
-export const formatNumber = (value: number): string => {
-  return value.toLocaleString("en-US")
+export const formatNumber = (num: number): string => {
+  return num.toLocaleString()
+}
+
+export const formatMillions = (amount: number): string => {
+  return `$${amount.toLocaleString()}M`
+}
+
+export const formatThousands = (amount: number): string => {
+  return `$${amount.toLocaleString()}K`
 }
 
 export const calculatePercentChange = (oldValue: number, newValue: number): number => {

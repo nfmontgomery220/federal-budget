@@ -2,733 +2,910 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
-import { ArrowLeft, Shield, Heart, Calculator, AlertTriangle } from "lucide-react"
-import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, ScatterChart, Scatter } from "recharts"
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Shield,
+  Heart,
+  Users,
+  GraduationCap,
+  Building,
+  Target,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  CheckCircle,
+  BarChart3,
+} from "lucide-react"
 
-// Guns vs Butter analysis data
-const gunsVsButterData = {
-  2024: {
-    totalDeficit: 1850,
-    revenueGap: 1050, // After loopholes/enforcement
+interface SpendingCategory {
+  id: string
+  name: string
+  type: "defense" | "social"
+  current: number
+  proposed: number
+  min: number
+  max: number
+  description: string
+  icon: any
+  priority: "High" | "Medium" | "Low"
+  publicSupport: number
+}
 
-    // The "Big 4" - Politically Untouchable
-    bigFour: {
-      total: 3287,
-      programs: [
-        { name: "Social Security", amount: 1347, growth: 5.2, beneficiaries: 67000000, avgBenefit: 1907 },
-        { name: "Medicare", amount: 1021, growth: 6.8, beneficiaries: 65000000, avgBenefit: 1571 },
-        { name: "Medicaid", amount: 616, growth: 4.1, beneficiaries: 85000000, avgBenefit: 724 },
-        { name: "Veterans Benefits", amount: 303, growth: 3.8, beneficiaries: 9000000, avgBenefit: 3367 },
-      ],
-    },
-
-    // Defense - "Guns"
-    defense: {
-      total: 816,
-      categories: [
-        { name: "Personnel", amount: 312, cutPotential: 62, difficulty: "Medium", impact: "High" },
-        { name: "Operations & Maintenance", amount: 304, cutPotential: 91, difficulty: "Medium", impact: "Medium" },
-        { name: "Procurement", amount: 200, cutPotential: 80, difficulty: "Easy", impact: "Low" },
-        { name: "R&D", amount: 140, cutPotential: 28, difficulty: "Hard", impact: "High" },
-      ],
-      maxRealisticCuts: 261, // About 32% - back to 2019 levels
-    },
-
-    // Discretionary Non-Defense - "Butter"
-    discretionary: {
-      total: 912,
-      categories: [
-        { name: "Education", amount: 80, cutPotential: 24, difficulty: "Hard", impact: "High" },
-        { name: "Transportation", amount: 105, cutPotential: 32, difficulty: "Medium", impact: "Medium" },
-        { name: "Health Research (NIH)", amount: 47, cutPotential: 14, difficulty: "Hard", impact: "High" },
-        { name: "Housing Assistance", amount: 63, cutPotential: 19, difficulty: "Hard", impact: "High" },
-        { name: "International Affairs", amount: 51, cutPotential: 20, difficulty: "Easy", impact: "Low" },
-        { name: "Justice/Law Enforcement", amount: 61, cutPotential: 18, difficulty: "Medium", impact: "Medium" },
-        { name: "Agriculture", amount: 26, cutPotential: 8, difficulty: "Easy", impact: "Low" },
-        { name: "Energy", amount: 45, cutPotential: 18, difficulty: "Medium", impact: "Medium" },
-        { name: "EPA", amount: 12, cutPotential: 4, difficulty: "Hard", impact: "High" },
-        { name: "NASA", amount: 25, cutPotential: 8, difficulty: "Medium", impact: "Medium" },
-        { name: "Other Agencies", amount: 397, cutPotential: 119, difficulty: "Medium", impact: "Medium" },
-      ],
-      maxRealisticCuts: 284, // About 31% cuts
-    },
-
-    // Other Mandatory - Limited Cut Potential
-    otherMandatory: {
-      total: 735,
-      categories: [
-        { name: "Interest on Debt", amount: 640, cutPotential: 0, difficulty: "Impossible", impact: "N/A" },
-        { name: "Unemployment Insurance", amount: 35, cutPotential: 11, difficulty: "Medium", impact: "High" },
-        { name: "Food Assistance (SNAP)", amount: 60, cutPotential: 18, difficulty: "Hard", impact: "High" },
-      ],
-      maxRealisticCuts: 29,
-    },
-
-    // Combination Scenarios
-    scenarios: [
-      {
-        name: "Moderate Cuts + Progressive Taxes",
-        description: "Balanced approach with modest cuts and higher taxes on wealthy",
-        defensecuts: 130, // 16% cut
-        discretionaryCuts: 142, // 15.6% cut
-        mandatoryCuts: 15,
-        totalCuts: 287,
-        taxIncreases: 763,
-        totalDeficitReduction: 1050,
-        politicalDifficulty: "High",
-        economicImpact: -1.1,
-      },
-      {
-        name: "Deep Defense Cuts + Moderate Taxes",
-        description: "Significant military reduction, moderate tax increases",
-        defensecuts: 245, // 30% cut - back to 2015 levels
-        discretionaryCuts: 91, // 10% cut
-        mandatoryCuts: 15,
-        totalCuts: 351,
-        taxIncreases: 699,
-        totalDeficitReduction: 1050,
-        politicalDifficulty: "Very High",
-        economicImpact: -0.9,
-      },
-      {
-        name: "Austerity Approach",
-        description: "Maximum realistic cuts across all areas",
-        defensecuts: 261, // 32% cut
-        discretionaryCuts: 284, // 31% cut
-        mandatoryCuts: 29,
-        totalCuts: 574,
-        taxIncreases: 476,
-        totalDeficitReduction: 1050,
-        politicalDifficulty: "Extreme",
-        economicImpact: -2.1,
-      },
-    ],
+const spendingCategories: SpendingCategory[] = [
+  // Defense Categories
+  {
+    id: "military-personnel",
+    name: "Military Personnel",
+    type: "defense",
+    current: 165,
+    proposed: 165,
+    min: 120,
+    max: 200,
+    description: "Active duty pay, benefits, and retirement",
+    icon: Shield,
+    priority: "High",
+    publicSupport: 78,
   },
-}
+  {
+    id: "operations-maintenance",
+    name: "Operations & Maintenance",
+    type: "defense",
+    current: 280,
+    proposed: 280,
+    min: 200,
+    max: 350,
+    description: "Training, fuel, equipment maintenance",
+    icon: Shield,
+    priority: "High",
+    publicSupport: 65,
+  },
+  {
+    id: "procurement",
+    name: "Procurement",
+    type: "defense",
+    current: 170,
+    proposed: 170,
+    min: 100,
+    max: 250,
+    description: "New weapons systems and equipment purchases",
+    icon: Shield,
+    priority: "Medium",
+    publicSupport: 45,
+  },
+  {
+    id: "rnd-defense",
+    name: "Research & Development",
+    type: "defense",
+    current: 140,
+    proposed: 140,
+    min: 80,
+    max: 200,
+    description: "Military technology research and development",
+    icon: Shield,
+    priority: "Medium",
+    publicSupport: 52,
+  },
+  {
+    id: "military-construction",
+    name: "Military Construction",
+    type: "defense",
+    current: 25,
+    proposed: 25,
+    min: 15,
+    max: 50,
+    description: "Base construction and facility upgrades",
+    icon: Building,
+    priority: "Low",
+    publicSupport: 38,
+  },
+  {
+    id: "overseas-operations",
+    name: "Overseas Operations",
+    type: "defense",
+    current: 106,
+    proposed: 106,
+    min: 50,
+    max: 150,
+    description: "Foreign military operations and bases",
+    icon: Shield,
+    priority: "Medium",
+    publicSupport: 42,
+  },
 
-const historicalGunsVsButter = [
-  { year: 1970, defense: 8.1, social: 6.2, total: 19.3, defenseShare: 42.0 },
-  { year: 1980, defense: 4.9, social: 11.1, total: 21.7, defenseShare: 22.6 },
-  { year: 1990, defense: 5.2, social: 11.9, total: 21.9, defenseShare: 23.7 },
-  { year: 2000, defense: 3.0, social: 10.5, total: 18.2, defenseShare: 16.5 },
-  { year: 2010, defense: 4.7, social: 16.0, total: 23.8, defenseShare: 19.7 },
-  { year: 2020, defense: 3.7, social: 17.8, total: 31.2, defenseShare: 11.9 },
-  { year: 2024, defense: 2.9, social: 11.7, total: 23.9, defenseShare: 12.1 },
+  // Social Categories
+  {
+    id: "healthcare",
+    name: "Healthcare Programs",
+    type: "social",
+    current: 1635,
+    proposed: 1635,
+    min: 1400,
+    max: 2000,
+    description: "Medicare, Medicaid, and health services",
+    icon: Heart,
+    priority: "High",
+    publicSupport: 85,
+  },
+  {
+    id: "social-security",
+    name: "Social Security",
+    type: "social",
+    current: 1347,
+    proposed: 1347,
+    min: 1200,
+    max: 1500,
+    description: "Retirement and disability benefits",
+    icon: Users,
+    priority: "High",
+    publicSupport: 89,
+  },
+  {
+    id: "education",
+    name: "Education",
+    type: "social",
+    current: 80,
+    proposed: 80,
+    min: 60,
+    max: 150,
+    description: "K-12, higher education, and training programs",
+    icon: GraduationCap,
+    priority: "High",
+    publicSupport: 82,
+  },
+  {
+    id: "housing-assistance",
+    name: "Housing Assistance",
+    type: "social",
+    current: 55,
+    proposed: 55,
+    min: 30,
+    max: 100,
+    description: "Public housing and rental assistance",
+    icon: Building,
+    priority: "Medium",
+    publicSupport: 68,
+  },
+  {
+    id: "nutrition-assistance",
+    name: "Nutrition Assistance",
+    type: "social",
+    current: 95,
+    proposed: 95,
+    min: 70,
+    max: 130,
+    description: "SNAP, WIC, and school meal programs",
+    icon: Heart,
+    priority: "High",
+    publicSupport: 74,
+  },
+  {
+    id: "unemployment-benefits",
+    name: "Unemployment Benefits",
+    type: "social",
+    current: 45,
+    proposed: 45,
+    min: 30,
+    max: 80,
+    description: "Unemployment insurance and job training",
+    icon: Users,
+    priority: "Medium",
+    publicSupport: 71,
+  },
 ]
 
-const internationalComparison = [
-  { country: "United States", defense: 3.5, social: 18.7, total: 37.8 },
-  { country: "Germany", defense: 1.4, social: 25.9, total: 43.9 },
-  { country: "France", defense: 1.9, social: 31.2, total: 58.5 },
-  { country: "United Kingdom", defense: 2.3, social: 20.6, total: 39.0 },
-  { country: "Japan", defense: 1.0, social: 22.1, total: 38.4 },
-  { country: "South Korea", defense: 2.8, social: 12.2, total: 28.4 },
-]
+export default function GunsVsButterAnalysis() {
+  const [categories, setCategories] = useState<SpendingCategory[]>(spendingCategories)
+  const [balanceTarget, setBalanceTarget] = useState(50) // 50% defense, 50% social
+  const [showOptimized, setShowOptimized] = useState(false)
 
-interface GunsVsButterAnalysisProps {
-  onBack?: () => void
-}
+  const updateCategory = (id: string, newValue: number) => {
+    setCategories((prev) => prev.map((cat) => (cat.id === id ? { ...cat, proposed: newValue } : cat)))
+  }
 
-export default function GunsVsButterAnalysis({ onBack }: GunsVsButterAnalysisProps) {
-  const [selectedYear, setSelectedYear] = useState("2024")
-  const [activeTab, setActiveTab] = useState("overview")
-  const [selectedScenario, setSelectedScenario] = useState("Moderate Cuts + Progressive Taxes")
-  const [customCuts, setCustomCuts] = useState({
-    defense: 16, // percentage
-    discretionary: 15,
-    mandatory: 2,
-  })
+  const calculateTotals = () => {
+    const defenseTotal = categories.filter((cat) => cat.type === "defense").reduce((sum, cat) => sum + cat.proposed, 0)
 
-  const currentData = gunsVsButterData[selectedYear as keyof typeof gunsVsButterData]
+    const socialTotal = categories.filter((cat) => cat.type === "social").reduce((sum, cat) => sum + cat.proposed, 0)
 
-  const formatBillions = (amount: number) => `$${amount.toLocaleString()}B`
-  const formatPercent = (amount: number) => `${amount.toFixed(1)}%`
-  const formatMillions = (amount: number) => `${amount.toLocaleString()}M`
+    const totalSpending = defenseTotal + socialTotal
+    const defensePercent = (defenseTotal / totalSpending) * 100
+    const socialPercent = (socialTotal / totalSpending) * 100
 
-  const calculateCustomCuts = () => {
-    const defenseCut = (customCuts.defense / 100) * currentData.defense.total
-    const discretionaryCut = (customCuts.discretionary / 100) * currentData.discretionary.total
-    const mandatoryCut = (customCuts.mandatory / 100) * currentData.otherMandatory.total
+    const currentDefenseTotal = categories
+      .filter((cat) => cat.type === "defense")
+      .reduce((sum, cat) => sum + cat.current, 0)
+
+    const currentSocialTotal = categories
+      .filter((cat) => cat.type === "social")
+      .reduce((sum, cat) => sum + cat.current, 0)
+
+    const defenseChange = defenseTotal - currentDefenseTotal
+    const socialChange = socialTotal - currentSocialTotal
+    const totalChange = defenseChange + socialChange
 
     return {
-      total: defenseCut + discretionaryCut + mandatoryCut,
-      defense: defenseCut,
-      discretionary: discretionaryCut,
-      mandatory: mandatoryCut,
+      defenseTotal,
+      socialTotal,
+      totalSpending,
+      defensePercent,
+      socialPercent,
+      defenseChange,
+      socialChange,
+      totalChange,
+      currentDefenseTotal,
+      currentSocialTotal,
     }
   }
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
-      case "easy":
-        return "bg-green-100 text-green-800"
-      case "medium":
-        return "bg-yellow-100 text-yellow-800"
-      case "hard":
-        return "bg-orange-100 text-orange-800"
-      case "extreme":
-        return "bg-red-100 text-red-800"
-      case "very high":
-        return "bg-red-100 text-red-800"
-      case "impossible":
-        return "bg-gray-100 text-gray-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
+  const optimizeForBalance = () => {
+    const totals = calculateTotals()
+    const targetDefenseTotal = (totals.totalSpending * balanceTarget) / 100
+    const targetSocialTotal = totals.totalSpending - targetDefenseTotal
+
+    // Proportionally adjust defense spending
+    const defenseCategories = categories.filter((cat) => cat.type === "defense")
+    const defenseAdjustmentFactor = targetDefenseTotal / totals.defenseTotal
+
+    // Proportionally adjust social spending
+    const socialCategories = categories.filter((cat) => cat.type === "social")
+    const socialAdjustmentFactor = targetSocialTotal / totals.socialTotal
+
+    const optimizedCategories = categories.map((cat) => {
+      if (cat.type === "defense") {
+        const newValue = Math.max(cat.min, Math.min(cat.max, cat.proposed * defenseAdjustmentFactor))
+        return { ...cat, proposed: Math.round(newValue) }
+      } else {
+        const newValue = Math.max(cat.min, Math.min(cat.max, cat.proposed * socialAdjustmentFactor))
+        return { ...cat, proposed: Math.round(newValue) }
+      }
+    })
+
+    setCategories(optimizedCategories)
+    setShowOptimized(true)
   }
+
+  const resetToBaseline = () => {
+    setCategories(spendingCategories.map((cat) => ({ ...cat, proposed: cat.current })))
+    setShowOptimized(false)
+  }
+
+  const totals = calculateTotals()
+  const isBalanced = Math.abs(totals.defensePercent - balanceTarget) < 5
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              {onBack && (
-                <Button variant="outline" size="sm" onClick={onBack}>
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back to Tax Scenarios
-                </Button>
-              )}
-              <h1 className="text-3xl font-bold text-gray-900">Guns vs Butter Analysis</h1>
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Guns vs Butter Analysis</h1>
+        <p className="text-gray-600">
+          Balance military spending with social programs to address the deficit while maintaining national priorities
+        </p>
+      </div>
+
+      {/* Current Balance Display */}
+      <Card className="border-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Current Balance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-4 gap-4 mb-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">${(totals.defenseTotal / 1000).toFixed(1)}T</div>
+              <div className="text-sm text-gray-600">Defense Spending</div>
+              <div className="text-xs text-gray-500">{totals.defensePercent.toFixed(1)}%</div>
             </div>
-            <p className="text-gray-600">
-              Classic economic trade-offs: Military spending vs Social programs. Finding the right balance to close the
-              ${formatBillions(currentData.totalDeficit)} deficit.
-            </p>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">${(totals.socialTotal / 1000).toFixed(1)}T</div>
+              <div className="text-sm text-gray-600">Social Spending</div>
+              <div className="text-xs text-gray-500">{totals.socialPercent.toFixed(1)}%</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">${(totals.totalSpending / 1000).toFixed(1)}T</div>
+              <div className="text-sm text-gray-600">Total Spending</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${totals.totalChange > 0 ? "text-red-600" : "text-green-600"}`}>
+                {totals.totalChange > 0 ? "+" : ""}${(totals.totalChange / 1000).toFixed(1)}T
+              </div>
+              <div className="text-sm text-gray-600">Change from Current</div>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2024">FY 2024</SelectItem>
-              </SelectContent>
-            </Select>
+
+          <div className="mb-4">
+            <div className="flex justify-between text-sm mb-2">
+              <span>Defense vs Social Balance</span>
+              <span>Target: {balanceTarget}% Defense</span>
+            </div>
+            <div className="flex h-4 rounded-full overflow-hidden">
+              <div
+                className="bg-red-500 flex items-center justify-center text-white text-xs font-bold"
+                style={{ width: `${totals.defensePercent}%` }}
+              >
+                {totals.defensePercent > 15 && `${totals.defensePercent.toFixed(0)}%`}
+              </div>
+              <div
+                className="bg-blue-500 flex items-center justify-center text-white text-xs font-bold"
+                style={{ width: `${totals.socialPercent}%` }}
+              >
+                {totals.socialPercent > 15 && `${totals.socialPercent.toFixed(0)}%`}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* The Hard Reality */}
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <AlertTriangle className="h-5 w-5" />
-              The 70s Economics Reality Check
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-blue-600">{formatBillions(currentData.bigFour.total)}</div>
-                <div className="text-sm text-blue-700">Big 4 (Untouchable)</div>
-                <div className="text-xs text-gray-600">SS, Medicare, Medicaid, Vets</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-red-600">{formatBillions(currentData.defense.total)}</div>
-                <div className="text-sm text-red-700">Defense (Guns)</div>
-                <div className="text-xs text-gray-600">
-                  Max cut: ~{formatBillions(currentData.defense.maxRealisticCuts)}
-                </div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">
-                  {formatBillions(currentData.discretionary.total)}
-                </div>
-                <div className="text-sm text-green-700">Discretionary (Butter)</div>
-                <div className="text-xs text-gray-600">
-                  Max cut: ~{formatBillions(currentData.discretionary.maxRealisticCuts)}
-                </div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-600">{formatBillions(640)}</div>
-                <div className="text-sm text-gray-700">Interest (Untouchable)</div>
-                <div className="text-xs text-gray-600">Can't cut debt service</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-orange-600">{formatBillions(574)}</div>
-                <div className="text-sm text-orange-700">Max Possible Cuts</div>
-                <div className="text-xs text-gray-600">
-                  Still need {formatBillions(currentData.revenueGap - 574)} in taxes
-                </div>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Target Defense Percentage:</label>
+              <Slider
+                value={[balanceTarget]}
+                onValueChange={(value) => setBalanceTarget(value[0])}
+                min={20}
+                max={80}
+                step={5}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>20%</span>
+                <span>50%</span>
+                <span>80%</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Current Balance</TabsTrigger>
-            <TabsTrigger value="scenarios">Cut Scenarios</TabsTrigger>
-            <TabsTrigger value="calculator">Custom Calculator</TabsTrigger>
-            <TabsTrigger value="historical">Historical Trends</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Current Guns vs Butter */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-red-600" />
-                    Defense Spending Breakdown
-                  </CardTitle>
-                  <CardDescription>
-                    Total: {formatBillions(currentData.defense.total)} (12.1% of budget)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {currentData.defense.categories.map((category, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">{category.name}</span>
-                          <div className="text-right">
-                            <div className="font-bold">{formatBillions(category.amount)}</div>
-                            <div className="text-xs text-gray-600">
-                              Cut potential: {formatBillions(category.cutPotential)}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Badge className={getDifficultyColor(category.difficulty)} size="sm">
-                            {category.difficulty}
-                          </Badge>
-                          <Badge variant="outline" size="sm">
-                            {category.impact} Impact
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Heart className="h-5 w-5 text-green-600" />
-                    Social/Discretionary Spending
-                  </CardTitle>
-                  <CardDescription>
-                    Total: {formatBillions(currentData.discretionary.total)} (13.5% of budget)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {currentData.discretionary.categories.map((category, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium text-sm">{category.name}</span>
-                          <div className="text-right">
-                            <div className="font-bold text-sm">{formatBillions(category.amount)}</div>
-                            <div className="text-xs text-gray-600">Cut: {formatBillions(category.cutPotential)}</div>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Badge className={getDifficultyColor(category.difficulty)} size="sm">
-                            {category.difficulty}
-                          </Badge>
-                          <Badge variant="outline" size="sm">
-                            {category.impact} Impact
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="flex gap-2">
+              <Button onClick={optimizeForBalance} variant="outline">
+                Optimize Balance
+              </Button>
+              <Button onClick={resetToBaseline} variant="outline">
+                Reset
+              </Button>
             </div>
+          </div>
 
-            {/* The Big 4 - Untouchable */}
+          {isBalanced && (
+            <Alert className="border-green-200 bg-green-50 mt-4">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                <strong>Balanced!</strong> Your spending allocation is within 5% of your target balance.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Main Content */}
+      <Tabs defaultValue="categories" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="categories">Spending Categories</TabsTrigger>
+          <TabsTrigger value="comparison">Defense vs Social</TabsTrigger>
+          <TabsTrigger value="tradeoffs">Trade-off Analysis</TabsTrigger>
+          <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="categories" className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Defense Categories */}
             <Card>
               <CardHeader>
-                <CardTitle>The "Big 4" - Politically Untouchable Programs</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-red-800">
+                  <Shield className="h-5 w-5" />
+                  Defense Spending
+                </CardTitle>
                 <CardDescription>
-                  {formatBillions(currentData.bigFour.total)} (48.7% of budget) - These programs are essentially
-                  off-limits for cuts
+                  ${(totals.defenseTotal / 1000).toFixed(1)}T total • {totals.defensePercent.toFixed(1)}% of combined
+                  spending
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {currentData.bigFour.programs.map((program, index) => (
-                    <div key={index} className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-medium text-blue-900">{program.name}</h4>
-                      <div className="text-2xl font-bold text-blue-600">{formatBillions(program.amount)}</div>
-                      <div className="text-sm text-blue-700 space-y-1">
-                        <div>{formatMillions(program.beneficiaries)} beneficiaries</div>
-                        <div>Avg: ${formatMillions(program.avgBenefit)}/year</div>
-                        <div>Growth: {formatPercent(program.growth)}/year</div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="space-y-4">
+                  {categories
+                    .filter((cat) => cat.type === "defense")
+                    .map((category) => {
+                      const Icon = category.icon
+                      const change = category.proposed - category.current
+                      const changePercent = (change / category.current) * 100
+
+                      return (
+                        <div key={category.id} className="border rounded-lg p-3">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4 text-red-600" />
+                              <div>
+                                <h4 className="font-medium">{category.name}</h4>
+                                <p className="text-xs text-gray-600">{category.description}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold">${category.proposed}B</div>
+                              {change !== 0 && (
+                                <div className={`text-xs ${change > 0 ? "text-red-600" : "text-green-600"}`}>
+                                  {change > 0 ? "+" : ""}${change}B ({changePercent.toFixed(1)}%)
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <Slider
+                            value={[category.proposed]}
+                            onValueChange={(value) => updateCategory(category.id, value[0])}
+                            min={category.min}
+                            max={category.max}
+                            step={5}
+                            className="w-full mb-2"
+                          />
+
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-500">
+                              ${category.min}B - ${category.max}B
+                            </span>
+                            <div className="flex gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {category.priority} Priority
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {category.publicSupport}% Support
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="scenarios" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {currentData.scenarios.map((scenario, index) => (
-                <Card key={index} className={selectedScenario === scenario.name ? "ring-2 ring-blue-500" : ""}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span className="text-sm">{scenario.name}</span>
-                      <Button
-                        variant={selectedScenario === scenario.name ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedScenario(scenario.name)}
-                      >
-                        Select
-                      </Button>
-                    </CardTitle>
-                    <CardDescription className="text-xs">{scenario.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4 text-center">
-                        <div>
-                          <div className="text-xl font-bold text-red-600">{formatBillions(scenario.totalCuts)}</div>
-                          <div className="text-xs text-gray-600">Spending Cuts</div>
-                        </div>
-                        <div>
-                          <div className="text-xl font-bold text-green-600">
-                            {formatBillions(scenario.taxIncreases)}
-                          </div>
-                          <div className="text-xs text-gray-600">Tax Increases</div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Defense Cuts:</span>
-                          <span className="font-medium">
-                            {formatBillions(scenario.defensecuts || scenario.defensecuts)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Discretionary Cuts:</span>
-                          <span className="font-medium">{formatBillions(scenario.discretionaryCuts)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Other Cuts:</span>
-                          <span className="font-medium">{formatBillions(scenario.mandatoryCuts)}</span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <Badge className={getDifficultyColor(scenario.politicalDifficulty)} size="sm">
-                          {scenario.politicalDifficulty}
-                        </Badge>
-                        <div className="text-xs text-center">
-                          <div className="font-medium">GDP Impact</div>
-                          <div className="text-red-600">{formatPercent(scenario.economicImpact)}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Detailed Scenario Analysis */}
+            {/* Social Categories */}
             <Card>
               <CardHeader>
-                <CardTitle>{selectedScenario} - Detailed Impact</CardTitle>
-                <CardDescription>What this scenario means in practice</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-blue-800">
+                  <Heart className="h-5 w-5" />
+                  Social Spending
+                </CardTitle>
+                <CardDescription>
+                  ${(totals.socialTotal / 1000).toFixed(1)}T total • {totals.socialPercent.toFixed(1)}% of combined
+                  spending
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  const scenario = currentData.scenarios.find((s) => s.name === selectedScenario)
-                  if (!scenario) return null
+                <div className="space-y-4">
+                  {categories
+                    .filter((cat) => cat.type === "social")
+                    .map((category) => {
+                      const Icon = category.icon
+                      const change = category.proposed - category.current
+                      const changePercent = (change / category.current) * 100
 
-                  return (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-medium mb-4">Spending Cuts Impact</h4>
-                        <div className="space-y-3">
-                          <div className="p-3 bg-red-50 rounded-lg">
-                            <h5 className="font-medium text-red-900">
-                              Defense Cuts: {formatBillions(scenario.defensecuts || scenario.defensecuts)}
-                            </h5>
-                            <p className="text-sm text-red-700">
-                              {scenario.name.includes("Deep Defense")
-                                ? "Return to 2015 spending levels. Significant force reduction, base closures, equipment delays."
-                                : "Modest personnel reduction, delayed procurement, efficiency improvements."}
-                            </p>
+                      return (
+                        <div key={category.id} className="border rounded-lg p-3">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4 text-blue-600" />
+                              <div>
+                                <h4 className="font-medium">{category.name}</h4>
+                                <p className="text-xs text-gray-600">{category.description}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold">${category.proposed}B</div>
+                              {change !== 0 && (
+                                <div className={`text-xs ${change > 0 ? "text-red-600" : "text-green-600"}`}>
+                                  {change > 0 ? "+" : ""}${change}B ({changePercent.toFixed(1)}%)
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="p-3 bg-orange-50 rounded-lg">
-                            <h5 className="font-medium text-orange-900">
-                              Discretionary Cuts: {formatBillions(scenario.discretionaryCuts)}
-                            </h5>
-                            <p className="text-sm text-orange-700">
-                              {scenario.name.includes("Austerity")
-                                ? "Deep cuts to education, research, infrastructure. Significant program eliminations."
-                                : "Targeted efficiency improvements, some program consolidation."}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-4">Economic & Political Reality</h4>
-                        <div className="space-y-3">
-                          <div className="p-3 bg-yellow-50 rounded-lg">
-                            <h5 className="font-medium text-yellow-900">Political Feasibility</h5>
-                            <p className="text-sm text-yellow-700">
-                              {scenario.politicalDifficulty === "Extreme"
-                                ? "Requires unprecedented political consensus. Multiple election cycles needed."
-                                : scenario.politicalDifficulty === "Very High"
-                                  ? "Extremely difficult. Would face massive opposition from defense/social constituencies."
-                                  : "Challenging but potentially achievable with strong leadership and crisis motivation."}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-blue-50 rounded-lg">
-                            <h5 className="font-medium text-blue-900">Economic Impact</h5>
-                            <p className="text-sm text-blue-700">
-                              GDP impact of {formatPercent(scenario.economicImpact)} reflects reduced government
-                              spending multiplier effects and potential tax drag on growth.
-                            </p>
+
+                          <Slider
+                            value={[category.proposed]}
+                            onValueChange={(value) => updateCategory(category.id, value[0])}
+                            min={category.min}
+                            max={category.max}
+                            step={5}
+                            className="w-full mb-2"
+                          />
+
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-500">
+                              ${category.min}B - ${category.max}B
+                            </span>
+                            <div className="flex gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {category.priority} Priority
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {category.publicSupport}% Support
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  )
-                })()}
+                      )
+                    })}
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        </TabsContent>
 
-          <TabsContent value="calculator" className="space-y-4">
+        <TabsContent value="comparison" className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  Custom Spending Cut Calculator
-                </CardTitle>
-                <CardDescription>Adjust spending cuts to see deficit impact</CardDescription>
+                <CardTitle className="text-red-800">Defense Spending Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Defense Cuts: {customCuts.defense}% (Max realistic: 32%)
-                      </label>
-                      <Slider
-                        value={[customCuts.defense]}
-                        onValueChange={(value) => setCustomCuts({ ...customCuts, defense: value[0] })}
-                        max={32}
-                        min={0}
-                        step={1}
-                        className="w-full"
-                      />
-                      <div className="text-sm text-gray-600 mt-1">
-                        Cut: {formatBillions((customCuts.defense / 100) * currentData.defense.total)}
-                      </div>
+                <div className="space-y-4">
+                  <div className="text-center p-4 bg-red-50 rounded-lg">
+                    <div className="text-3xl font-bold text-red-800">${(totals.defenseTotal / 1000).toFixed(1)}T</div>
+                    <div className="text-sm text-red-600">Total Defense Spending</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {totals.defenseChange > 0 ? "+" : ""}${(totals.defenseChange / 1000).toFixed(1)}T from current
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Discretionary Cuts: {customCuts.discretionary}% (Max realistic: 31%)
-                      </label>
-                      <Slider
-                        value={[customCuts.discretionary]}
-                        onValueChange={(value) => setCustomCuts({ ...customCuts, discretionary: value[0] })}
-                        max={31}
-                        min={0}
-                        step={1}
-                        className="w-full"
-                      />
-                      <div className="text-sm text-gray-600 mt-1">
-                        Cut: {formatBillions((customCuts.discretionary / 100) * currentData.discretionary.total)}
-                      </div>
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Largest Defense Categories:</h4>
+                    {categories
+                      .filter((cat) => cat.type === "defense")
+                      .sort((a, b) => b.proposed - a.proposed)
+                      .slice(0, 3)
+                      .map((cat, index) => (
+                        <div key={cat.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">
+                            {index + 1}. {cat.name}
+                          </span>
+                          <span className="font-mono text-sm">${cat.proposed}B</span>
+                        </div>
+                      ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Public Support Analysis:</h4>
+                    <div className="text-sm text-gray-600">
+                      Average public support:{" "}
+                      {(
+                        categories
+                          .filter((cat) => cat.type === "defense")
+                          .reduce((sum, cat) => sum + cat.publicSupport, 0) /
+                        categories.filter((cat) => cat.type === "defense").length
+                      ).toFixed(0)}
+                      %
                     </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Other Mandatory Cuts: {customCuts.mandatory}% (Max realistic: 4%)
-                      </label>
-                      <Slider
-                        value={[customCuts.mandatory]}
-                        onValueChange={(value) => setCustomCuts({ ...customCuts, mandatory: value[0] })}
-                        max={4}
-                        min={0}
-                        step={0.5}
-                        className="w-full"
-                      />
-                      <div className="text-sm text-gray-600 mt-1">
-                        Cut: {formatBillions((customCuts.mandatory / 100) * currentData.otherMandatory.total)}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-blue-800">Social Spending Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-3xl font-bold text-blue-800">${(totals.socialTotal / 1000).toFixed(1)}T</div>
+                    <div className="text-sm text-blue-600">Total Social Spending</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {totals.socialChange > 0 ? "+" : ""}${(totals.socialChange / 1000).toFixed(1)}T from current
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Largest Social Categories:</h4>
+                    {categories
+                      .filter((cat) => cat.type === "social")
+                      .sort((a, b) => b.proposed - a.proposed)
+                      .slice(0, 3)
+                      .map((cat, index) => (
+                        <div key={cat.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">
+                            {index + 1}. {cat.name}
+                          </span>
+                          <span className="font-mono text-sm">${cat.proposed}B</span>
+                        </div>
+                      ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Public Support Analysis:</h4>
+                    <div className="text-sm text-gray-600">
+                      Average public support:{" "}
+                      {(
+                        categories
+                          .filter((cat) => cat.type === "social")
+                          .reduce((sum, cat) => sum + cat.publicSupport, 0) /
+                        categories.filter((cat) => cat.type === "social").length
+                      ).toFixed(0)}
+                      %
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Historical Context</CardTitle>
+              <CardDescription>How current spending compares to historical averages</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="text-center p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Cold War Era (1960s-1980s)</h4>
+                  <div className="text-lg font-bold text-red-600">~60%</div>
+                  <div className="text-sm text-gray-600">Defense share of discretionary spending</div>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Post-Cold War (1990s-2000s)</h4>
+                  <div className="text-lg font-bold text-purple-600">~50%</div>
+                  <div className="text-sm text-gray-600">More balanced allocation</div>
+                </div>
+                <div className="text-center p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Current (2025)</h4>
+                  <div className="text-lg font-bold text-blue-600">{totals.defensePercent.toFixed(0)}%</div>
+                  <div className="text-sm text-gray-600">Your current allocation</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tradeoffs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Trade-off Analysis
+              </CardTitle>
+              <CardDescription>
+                Understanding the implications of shifting spending between defense and social programs
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="p-4 border-l-4 border-red-500 bg-red-50">
+                    <h4 className="font-medium text-red-800 mb-2">Reducing Defense Spending</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <span>More funds available for social programs</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <span>Reduced deficit pressure</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="h-4 w-4 text-red-600" />
+                        <span>Potential national security risks</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="h-4 w-4 text-red-600" />
+                        <span>Defense industry job losses</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <span>Political resistance from defense hawks</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="p-4 bg-red-50 rounded-lg">
-                      <h4 className="font-medium text-red-900">Total Spending Cuts</h4>
-                      <div className="text-2xl font-bold text-red-600">
-                        {formatBillions(calculateCustomCuts().total)}
+                  <div className="p-4 border-l-4 border-blue-500 bg-blue-50">
+                    <h4 className="font-medium text-blue-800 mb-2">Reducing Social Spending</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <span>Lower government spending overall</span>
                       </div>
-                      <p className="text-sm text-red-700">Annual budget reduction</p>
-                    </div>
-
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <h4 className="font-medium text-green-900">Remaining Tax Need</h4>
-                      <div className="text-2xl font-bold text-green-600">
-                        {formatBillions(Math.max(0, currentData.revenueGap - calculateCustomCuts().total))}
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <span>Potential for tax reductions</span>
                       </div>
-                      <p className="text-sm text-green-700">Still needed from tax increases</p>
-                    </div>
-
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-medium text-blue-900">Deficit Closure</h4>
-                      <div className="text-xl font-bold text-blue-600">
-                        {formatPercent((calculateCustomCuts().total / currentData.revenueGap) * 100)}
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="h-4 w-4 text-red-600" />
+                        <span>Increased poverty and inequality</span>
                       </div>
-                      <p className="text-sm text-blue-700">Of remaining gap closed by cuts</p>
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="h-4 w-4 text-red-600" />
+                        <span>Reduced economic safety net</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <span>Strong public opposition</span>
+                      </div>
                     </div>
+                  </div>
+                </div>
 
-                    <div className="p-4 bg-yellow-50 rounded-lg">
-                      <h4 className="font-medium text-yellow-900">Reality Check</h4>
-                      <p className="text-sm text-yellow-700">
-                        {calculateCustomCuts().total > 400
-                          ? "These cuts would be extremely difficult politically and economically disruptive."
-                          : calculateCustomCuts().total > 200
-                            ? "Significant cuts requiring major political consensus."
-                            : "Modest cuts that might be politically feasible."}
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium mb-3">Economic Impact Analysis</h4>
+                  <div className="grid md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <h5 className="font-medium text-gray-800">Defense Spending Multiplier</h5>
+                      <p className="text-gray-600">
+                        Every $1 in defense spending generates approximately $1.40 in economic activity
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-gray-800">Social Spending Multiplier</h5>
+                      <p className="text-gray-600">
+                        Every $1 in social spending generates approximately $1.60 in economic activity
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-gray-800">Deficit Impact</h5>
+                      <p className="text-gray-600">
+                        Current changes would {totals.totalChange > 0 ? "increase" : "decrease"} deficit by $
+                        {Math.abs(totals.totalChange / 1000).toFixed(1)}T
                       </p>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <TabsContent value="historical" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Historical Guns vs Butter (% of GDP)</CardTitle>
-                  <CardDescription>Defense vs Social spending over time</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      defense: { label: "Defense", color: "hsl(var(--chart-1))" },
-                      social: { label: "Social", color: "hsl(var(--chart-2))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={historicalGunsVsButter}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis />
-                        <ChartTooltip
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                  <p className="font-medium">{label}</p>
-                                  {payload.map((entry, index) => (
-                                    <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                      {entry.name}: {formatPercent(entry.value as number)} of GDP
-                                    </p>
-                                  ))}
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Line type="monotone" dataKey="defense" stroke="var(--color-defense)" strokeWidth={3} />
-                        <Line type="monotone" dataKey="social" stroke="var(--color-social)" strokeWidth={3} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>International Comparison (% of GDP)</CardTitle>
-                  <CardDescription>How the US compares to other developed nations</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer
-                    config={{
-                      defense: { label: "Defense", color: "hsl(var(--chart-1))" },
-                      social: { label: "Social", color: "hsl(var(--chart-2))" },
-                    }}
-                    className="h-[300px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ScatterChart data={internationalComparison}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="defense" name="Defense Spending" />
-                        <YAxis dataKey="social" name="Social Spending" />
-                        <ChartTooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload[0]) {
-                              const data = payload[0].payload
-                              return (
-                                <div className="bg-white p-3 border rounded-lg shadow-lg">
-                                  <p className="font-medium">{data.country}</p>
-                                  <p className="text-sm">Defense: {formatPercent(data.defense)} of GDP</p>
-                                  <p className="text-sm">Social: {formatPercent(data.social)} of GDP</p>
-                                  <p className="text-sm">Total Gov: {formatPercent(data.total)} of GDP</p>
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Scatter dataKey="social" fill="#3b82f6" />
-                      </ScatterChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
+        <TabsContent value="scenarios" className="space-y-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card className="border-red-200 bg-red-50">
               <CardHeader>
-                <CardTitle>Key Historical Insights</CardTitle>
-                <CardDescription>Lessons from 50+ years of budget battles</CardDescription>
+                <CardTitle className="text-red-800">Defense Priority</CardTitle>
+                <CardDescription>Emphasize national security</CardDescription>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900">Cold War Peak (1970s-80s)</h4>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Defense spending peaked at 8.1% of GDP in 1970, gradually declining as social programs expanded. The
-                    classic guns vs butter trade-off.
-                  </p>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-medium text-green-900">Peace Dividend (1990s-2000s)</h4>
-                  <p className="text-sm text-green-700 mt-1">
-                    Post-Cold War defense cuts freed up resources for deficit reduction and social programs. Defense
-                    fell to 3% of GDP by 2000.
-                  </p>
-                </div>
-                <div className="p-4 bg-orange-50 rounded-lg">
-                  <h4 className="font-medium text-orange-900">Modern Challenge (2010s-2020s)</h4>
-                  <p className="text-sm text-orange-700 mt-1">
-                    Aging population drives social spending growth while geopolitical tensions limit defense cuts. The
-                    squeeze is real.
-                  </p>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-800">65%</div>
+                    <div className="text-sm text-red-600">Defense Share</div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full bg-transparent"
+                    onClick={() => {
+                      setBalanceTarget(65)
+                      optimizeForBalance()
+                    }}
+                  >
+                    Apply Scenario
+                  </Button>
+                  <div className="text-xs text-gray-600">
+                    <strong>Pros:</strong> Strong defense, global leadership
+                    <br />
+                    <strong>Cons:</strong> Limited social programs, higher inequality
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+
+            <Card className="border-purple-200 bg-purple-50">
+              <CardHeader>
+                <CardTitle className="text-purple-800">Balanced Approach</CardTitle>
+                <CardDescription>Equal emphasis on both priorities</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-800">50%</div>
+                    <div className="text-sm text-purple-600">Defense Share</div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full bg-transparent"
+                    onClick={() => {
+                      setBalanceTarget(50)
+                      optimizeForBalance()
+                    }}
+                  >
+                    Apply Scenario
+                  </Button>
+                  <div className="text-xs text-gray-600">
+                    <strong>Pros:</strong> Moderate approach, broad support
+                    <br />
+                    <strong>Cons:</strong> May not fully address either priority
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="text-blue-800">Social Priority</CardTitle>
+                <CardDescription>Focus on domestic programs</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-800">35%</div>
+                    <div className="text-sm text-blue-600">Defense Share</div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full bg-transparent"
+                    onClick={() => {
+                      setBalanceTarget(35)
+                      optimizeForBalance()
+                    }}
+                  >
+                    Apply Scenario
+                  </Button>
+                  <div className="text-xs text-gray-600">
+                    <strong>Pros:</strong> Strong social safety net, reduced inequality
+                    <br />
+                    <strong>Cons:</strong> Potential security vulnerabilities
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Scenario Impact Summary</CardTitle>
+              <CardDescription>How different approaches affect the deficit and priorities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium mb-2">Current Configuration Impact</h4>
+                  <div className="grid md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Total Spending Change:</span>
+                      <div
+                        className={`font-mono font-bold ${totals.totalChange > 0 ? "text-red-600" : "text-green-600"}`}
+                      >
+                        {totals.totalChange > 0 ? "+" : ""}${(totals.totalChange / 1000).toFixed(1)}T
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Defense Balance:</span>
+                      <div className="font-mono font-bold">{totals.defensePercent.toFixed(1)}%</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Social Balance:</span>
+                      <div className="font-mono font-bold">{totals.socialPercent.toFixed(1)}%</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Deficit Impact:</span>
+                      <div
+                        className={`font-mono font-bold ${totals.totalChange > 0 ? "text-red-600" : "text-green-600"}`}
+                      >
+                        ${((2650 + totals.totalChange) / 1000).toFixed(1)}T
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {Math.abs(totals.totalChange) > 100 && (
+                  <Alert
+                    className={totals.totalChange > 0 ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Significant Change Detected:</strong>
+                      {totals.totalChange > 0 ? (
+                        <span className="text-red-800">
+                          Your changes would increase spending by ${(Math.abs(totals.totalChange) / 1000).toFixed(1)}T,
+                          worsening the deficit. Consider offsetting cuts or revenue increases.
+                        </span>
+                      ) : (
+                        <span className="text-green-800">
+                          Your changes would reduce spending by ${(Math.abs(totals.totalChange) / 1000).toFixed(1)}T,
+                          improving the deficit by {((Math.abs(totals.totalChange) / 2650) * 100).toFixed(1)}%.
+                        </span>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

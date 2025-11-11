@@ -8,29 +8,30 @@ import {
   Calculator,
   BarChart3,
   TrendingUp,
-  Users,
-  FileText,
-  AlertTriangle,
-  Building2,
-  PieChart,
-  Target,
-  Gavel,
   Shield,
-  Heart,
-  Briefcase,
+  DollarSign,
+  Users,
+  MapPin,
+  PieChart,
+  Settings,
+  Target,
+  FileText,
   Activity,
+  AlertTriangle,
   ArrowLeft,
 } from "lucide-react"
 
-// Import components with proper default exports
-import BalancedBudgetBuilder from "../balanced-budget-builder"
-import BudgetAnalyticsDashboard from "../budget-analytics-dashboard"
+// Import components from the components directory
+import BalancedBudgetBuilder from "../components/balanced-budget-builder"
+import BudgetAnalyticsDashboard from "../components/budget-analytics-dashboard"
+import RevenueBreakdown from "../components/revenue-breakdown"
+
+// Import other tools from root directory
 import TaxDesignCalculator from "../tax-design-calculator"
 import MilitarySpendingBreakdown from "../military-spending-breakdown"
 import RevenueOptimization from "../revenue-optimization"
 import IncomeBracketImpactAnalyzer from "../income-bracket-impact-analyzer"
 import StateTaxAnalysis from "../state-tax-analysis"
-import RevenueBreakdown from "../revenue-breakdown"
 import TaxPolicyScenarios from "../tax-policy-scenarios"
 import GunsVsButterAnalysis from "../guns-vs-butter-analysis"
 import SocialSecurityMedicareAnalysis from "../social-security-medicare-analysis"
@@ -43,228 +44,77 @@ type ActiveTool =
   | "budget-builder"
   | "analytics"
   | "tax-design"
-  | "military-spending"
+  | "military-analysis"
   | "revenue-optimization"
   | "income-impact"
   | "state-tax"
   | "revenue-breakdown"
   | "tax-scenarios"
-  | "guns-vs-butter"
+  | "guns-butter"
   | "social-security"
   | "ss-solutions"
   | "full-proposal"
   | "legislative-updates"
 
 export default function HomePage() {
-  const [activeTool, setActiveTool] = useState<ActiveTool>("dashboard")
+  const [activeView, setActiveView] = useState<ActiveTool>("dashboard")
 
-  const handleToolSelect = (tool: ActiveTool) => {
-    setActiveTool(tool)
+  const renderActiveView = () => {
+    switch (activeView) {
+      case "budget-builder":
+        return <BalancedBudgetBuilder />
+      case "analytics":
+        return <BudgetAnalyticsDashboard />
+      case "tax-design":
+        return <TaxDesignCalculator />
+      case "military-analysis":
+        return <MilitarySpendingBreakdown />
+      case "revenue-optimization":
+        return <RevenueOptimization />
+      case "income-impact":
+        return <IncomeBracketImpactAnalyzer />
+      case "state-tax":
+        return <StateTaxAnalysis />
+      case "revenue-breakdown":
+        return <RevenueBreakdown />
+      case "tax-scenarios":
+        return <TaxPolicyScenarios />
+      case "guns-butter":
+        return <GunsVsButterAnalysis />
+      case "social-security":
+        return <SocialSecurityMedicareAnalysis />
+      case "ss-solutions":
+        return <SocialSecuritySolutions />
+      case "full-proposal":
+        return <FullProposalGenerator />
+      case "legislative-updates":
+        return <LegislativeUpdateSystem />
+      default:
+        return <DashboardHome setActiveView={setActiveView} />
+    }
   }
 
-  const handleBackToDashboard = () => {
-    setActiveTool("dashboard")
-  }
-
-  if (activeTool === "budget-builder") {
+  if (activeView !== "dashboard") {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
+        <div className="bg-white border-b px-6 py-4">
+          <Button variant="outline" onClick={() => setActiveView("dashboard")} className="mb-2">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
-          <BalancedBudgetBuilder />
         </div>
+        <div className="p-6">{renderActiveView()}</div>
       </div>
     )
   }
 
-  if (activeTool === "analytics") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <BudgetAnalyticsDashboard />
-        </div>
-      </div>
-    )
-  }
+  return <DashboardHome setActiveView={setActiveView} />
+}
 
-  if (activeTool === "tax-design") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <TaxDesignCalculator />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "military-spending") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <MilitarySpendingBreakdown />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "revenue-optimization") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <RevenueOptimization />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "income-impact") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <IncomeBracketImpactAnalyzer />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "state-tax") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <StateTaxAnalysis />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "revenue-breakdown") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <RevenueBreakdown />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "tax-scenarios") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <TaxPolicyScenarios />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "guns-vs-butter") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <GunsVsButterAnalysis />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "social-security") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <SocialSecurityMedicareAnalysis />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "ss-solutions") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <SocialSecuritySolutions />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "full-proposal") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <FullProposalGenerator />
-        </div>
-      </div>
-    )
-  }
-
-  if (activeTool === "legislative-updates") {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <Button onClick={handleBackToDashboard} variant="outline" className="mb-6 bg-transparent">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <LegislativeUpdateSystem />
-        </div>
-      </div>
-    )
-  }
-
+function DashboardHome({ setActiveView }: { setActiveView: (view: ActiveTool) => void }) {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Federal Budget Analysis Tool</h1>
@@ -286,75 +136,70 @@ export default function HomePage() {
         </Alert>
 
         {/* Main Tools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {/* Budget Builder */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-blue-200 bg-blue-50">
+          <Card className="border-blue-200 bg-blue-50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-800">
-                <Calculator className="h-5 w-5" />
-                Budget Builder
-              </CardTitle>
-              <CardDescription className="text-blue-700">
+              <div className="flex items-center gap-2">
+                <Calculator className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-blue-900">Budget Builder</CardTitle>
+              </div>
+              <CardDescription>
                 Interactive tool to balance the 2025 federal budget through spending cuts and revenue increases
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button
-                onClick={() => handleToolSelect("budget-builder")}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
+              <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => setActiveView("budget-builder")}>
                 Start Building Budget
               </Button>
             </CardContent>
           </Card>
 
           {/* Analytics Dashboard */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-green-200 bg-green-50">
+          <Card className="border-green-200 bg-green-50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-800">
-                <BarChart3 className="h-5 w-5" />
-                Analytics Dashboard
-              </CardTitle>
-              <CardDescription className="text-green-700">
-                Real-time insights from user budget exercises and policy preferences
-              </CardDescription>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-green-600" />
+                <CardTitle className="text-green-900">Analytics Dashboard</CardTitle>
+              </div>
+              <CardDescription>Real-time insights from user budget exercises and policy preferences</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => handleToolSelect("analytics")} className="w-full bg-green-600 hover:bg-green-700">
+              <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => setActiveView("analytics")}>
                 View Analytics
               </Button>
             </CardContent>
           </Card>
 
           {/* Tax Design Calculator */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="border-gray-200 bg-gray-50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Tax Design Calculator
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-gray-600" />
+                <CardTitle className="text-gray-900">Tax Design Calculator</CardTitle>
+              </div>
               <CardDescription>Design optimal tax policies and analyze revenue potential</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => handleToolSelect("tax-design")} className="w-full bg-gray-900 hover:bg-gray-800">
+              <Button className="w-full bg-gray-800 hover:bg-gray-900" onClick={() => setActiveView("tax-design")}>
                 Design Tax Policy
               </Button>
             </CardContent>
           </Card>
 
           {/* Military Spending Analysis */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="border-gray-200 bg-gray-50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Military Spending Analysis
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-gray-600" />
+                <CardTitle className="text-gray-900">Military Spending Analysis</CardTitle>
+              </div>
               <CardDescription>Detailed breakdown of defense spending by branch and category</CardDescription>
             </CardHeader>
             <CardContent>
               <Button
-                onClick={() => handleToolSelect("military-spending")}
-                className="w-full bg-gray-900 hover:bg-gray-800"
+                className="w-full bg-gray-800 hover:bg-gray-900"
+                onClick={() => setActiveView("military-analysis")}
               >
                 Analyze Defense Spending
               </Button>
@@ -362,18 +207,18 @@ export default function HomePage() {
           </Card>
 
           {/* Revenue Optimization */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="border-gray-200 bg-gray-50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Revenue Optimization
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-gray-600" />
+                <CardTitle className="text-gray-900">Revenue Optimization</CardTitle>
+              </div>
               <CardDescription>Find the most efficient ways to increase federal revenue</CardDescription>
             </CardHeader>
             <CardContent>
               <Button
-                onClick={() => handleToolSelect("revenue-optimization")}
-                className="w-full bg-gray-900 hover:bg-gray-800"
+                className="w-full bg-gray-800 hover:bg-gray-900"
+                onClick={() => setActiveView("revenue-optimization")}
               >
                 Optimize Revenue
               </Button>
@@ -381,19 +226,16 @@ export default function HomePage() {
           </Card>
 
           {/* Income Impact Analysis */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="border-gray-200 bg-gray-50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Income Impact Analysis
-              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-gray-600" />
+                <CardTitle className="text-gray-900">Income Impact Analysis</CardTitle>
+              </div>
               <CardDescription>Analyze how tax changes affect different income brackets</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button
-                onClick={() => handleToolSelect("income-impact")}
-                className="w-full bg-gray-900 hover:bg-gray-800"
-              >
+              <Button className="w-full bg-gray-800 hover:bg-gray-900" onClick={() => setActiveView("income-impact")}>
                 Analyze Income Impact
               </Button>
             </CardContent>
@@ -402,130 +244,122 @@ export default function HomePage() {
 
         {/* Additional Analysis Tools */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-center mb-8">Additional Analysis Tools</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Additional Analysis Tools</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Button
               variant="outline"
-              onClick={() => handleToolSelect("state-tax")}
-              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+              className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
+              onClick={() => setActiveView("state-tax")}
             >
-              <Building2 className="h-5 w-5" />
+              <MapPin className="h-5 w-5" />
               <div className="text-center">
-                <div className="font-medium text-sm">State Tax Analysis</div>
-                <div className="text-xs text-gray-600">Regional tax impacts</div>
+                <div className="font-medium">State Tax Analysis</div>
+                <div className="text-xs text-gray-500">Regional tax impacts</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              onClick={() => handleToolSelect("revenue-breakdown")}
-              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+              className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
+              onClick={() => setActiveView("revenue-breakdown")}
             >
               <PieChart className="h-5 w-5" />
               <div className="text-center">
-                <div className="font-medium text-sm">Revenue Breakdown</div>
-                <div className="text-xs text-gray-600">Tax source analysis</div>
+                <div className="font-medium">Revenue Breakdown</div>
+                <div className="text-xs text-gray-500">Tax source analysis</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              onClick={() => handleToolSelect("tax-scenarios")}
-              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+              className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
+              onClick={() => setActiveView("tax-scenarios")}
             >
-              <Calculator className="h-5 w-5" />
+              <Settings className="h-5 w-5" />
               <div className="text-center">
-                <div className="font-medium text-sm">Tax Scenarios</div>
-                <div className="text-xs text-gray-600">Policy comparisons</div>
+                <div className="font-medium">Tax Scenarios</div>
+                <div className="text-xs text-gray-500">Policy comparisons</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              onClick={() => handleToolSelect("guns-vs-butter")}
-              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+              className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
+              onClick={() => setActiveView("guns-butter")}
             >
-              <Briefcase className="h-5 w-5" />
+              <Target className="h-5 w-5" />
               <div className="text-center">
-                <div className="font-medium text-sm">Guns vs Butter</div>
-                <div className="text-xs text-gray-600">Defense vs social spending</div>
+                <div className="font-medium">Guns vs Butter</div>
+                <div className="text-xs text-gray-500">Defense vs social spending</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              onClick={() => handleToolSelect("social-security")}
-              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+              className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
+              onClick={() => setActiveView("social-security")}
             >
-              <Heart className="h-5 w-5" />
+              <Users className="h-5 w-5" />
               <div className="text-center">
-                <div className="font-medium text-sm">Social Security Analysis</div>
-                <div className="text-xs text-gray-600">Entitlement sustainability</div>
+                <div className="font-medium">Social Security Analysis</div>
+                <div className="text-xs text-gray-500">Entitlement sustainability</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              onClick={() => handleToolSelect("ss-solutions")}
-              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+              className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
+              onClick={() => setActiveView("ss-solutions")}
             >
-              <Activity className="h-5 w-5" />
+              <TrendingUp className="h-5 w-5" />
               <div className="text-center">
-                <div className="font-medium text-sm">SS Solutions</div>
-                <div className="text-xs text-gray-600">Reform options</div>
+                <div className="font-medium">SS Solutions</div>
+                <div className="text-xs text-gray-500">Reform options</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              onClick={() => handleToolSelect("full-proposal")}
-              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+              className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
+              onClick={() => setActiveView("full-proposal")}
             >
               <FileText className="h-5 w-5" />
               <div className="text-center">
-                <div className="font-medium text-sm">Full Proposal</div>
-                <div className="text-xs text-gray-600">Complete policy package</div>
+                <div className="font-medium">Full Proposal</div>
+                <div className="text-xs text-gray-500">Complete policy package</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              onClick={() => handleToolSelect("legislative-updates")}
-              className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-gray-50"
+              className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
+              onClick={() => setActiveView("legislative-updates")}
             >
-              <Gavel className="h-5 w-5" />
+              <Activity className="h-5 w-5" />
               <div className="text-center">
-                <div className="font-medium text-sm">Legislative Updates</div>
-                <div className="text-xs text-gray-600">Real-time tracking</div>
+                <div className="font-medium">Legislative Updates</div>
+                <div className="text-xs text-gray-500">Real-time tracking</div>
               </div>
             </Button>
           </div>
         </div>
 
         {/* 2025 Fiscal Reality */}
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-6">2025 Fiscal Reality</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="pt-6">
-                <div className="text-3xl font-bold text-red-600 mb-2">$2.65T</div>
-                <div className="text-red-700 font-medium">Annual Deficit</div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-blue-200 bg-blue-50">
-              <CardContent className="pt-6">
-                <div className="text-3xl font-bold text-blue-600 mb-2">$7.2T</div>
-                <div className="text-blue-700 font-medium">Total Spending</div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-green-200 bg-green-50">
-              <CardContent className="pt-6">
-                <div className="text-3xl font-bold text-green-600 mb-2">$4.55T</div>
-                <div className="text-green-700 font-medium">Total Revenue</div>
-              </CardContent>
-            </Card>
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">2025 Fiscal Reality</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-red-600 mb-2">$2.65T</div>
+              <div className="text-gray-600">Annual Deficit</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600 mb-2">$7.2T</div>
+              <div className="text-gray-600">Total Spending</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">$4.55T</div>
+              <div className="text-gray-600">Total Revenue</div>
+            </div>
           </div>
         </div>
       </div>
