@@ -9,28 +9,6 @@
     "start": "next start",
     "type-check": "tsc --noEmit"
   },
-  "resolutions": {
-    "d3-path/rollup": "^3.0.0",
-    "d3-shape/rollup": "^3.0.0",
-    "react-day-picker/@typescript-eslint/eslint-plugin": "^7.0.0",
-    "react-day-picker/@typescript-eslint/parser": "^7.0.0",
-    "react-day-picker/eslint": "^8.57.0"
-  },
-  "overrides": {
-    "d3-path": {
-      "rollup": "^3.0.0",
-      "rollup-plugin-terser": "^5.3.1"
-    },
-    "d3-shape": {
-      "rollup": "^3.0.0",
-      "rollup-plugin-terser": "^5.3.1"
-    },
-    "react-day-picker": {
-      "@typescript-eslint/parser": "^7.0.0",
-      "@typescript-eslint/eslint-plugin": "^7.0.0",
-      "eslint": "^8.57.0"
-    }
-  },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.2",
