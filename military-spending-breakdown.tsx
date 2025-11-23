@@ -18,8 +18,20 @@ import {
   Cell,
   LineChart,
   Line,
+  Legend,
 } from "recharts"
-import { Shield, Plane, Ship, Users, Globe, AlertTriangle, TrendingUp, DollarSign, Target } from "lucide-react"
+import {
+  Shield,
+  Plane,
+  Ship,
+  Users,
+  Globe,
+  AlertTriangle,
+  TrendingUp,
+  DollarSign,
+  Target,
+  Briefcase,
+} from "lucide-react"
 
 const totalDefenseSpending = 816
 
@@ -68,6 +80,109 @@ const historicalSpending = [
   { year: 2024, amount: 805, gdpPercent: 2.8 },
   { year: 2025, amount: 816, gdpPercent: 2.8 },
 ]
+
+const branchDetails: Record<
+  string,
+  {
+    breakdown: { category: string; amount: number; fill: string }[]
+    forceStructure: { label: string; value: string; icon: any }[]
+    contractorSplit: { name: string; value: number; fill: string }[]
+  }
+> = {
+  Army: {
+    breakdown: [
+      { category: "Personnel", amount: 69, fill: "#10b981" },
+      { category: "Operations & Maintenance", amount: 74, fill: "#34d399" },
+      { category: "Procurement", amount: 24, fill: "#6ee7b7" },
+      { category: "R&D", amount: 14, fill: "#a7f3d0" },
+      { category: "Construction", amount: 4, fill: "#d1fae5" },
+    ],
+    forceStructure: [
+      { label: "Active Duty", value: "452,000", icon: Users },
+      { label: "National Guard", value: "325,000", icon: Shield },
+      { label: "Reserve", value: "174,000", icon: Briefcase },
+      { label: "Combat Brigades", value: "31", icon: Target },
+    ],
+    contractorSplit: [
+      { name: "Private Contractors", value: 45, fill: "#f59e0b" },
+      { name: "Gov/Internal", value: 55, fill: "#10b981" },
+    ],
+  },
+  Navy: {
+    breakdown: [
+      { category: "Personnel", amount: 58, fill: "#3b82f6" },
+      { category: "Operations & Maintenance", amount: 82, fill: "#60a5fa" },
+      { category: "Procurement", amount: 77, fill: "#93c5fd" }, // High due to ships
+      { category: "R&D", amount: 27, fill: "#bfdbfe" },
+      { category: "Construction", amount: 5, fill: "#dbeafe" },
+    ],
+    forceStructure: [
+      { label: "Active Duty", value: "347,000", icon: Users },
+      { label: "Battle Force Ships", value: "296", icon: Ship },
+      { label: "Aircraft", value: "3,700+", icon: Plane },
+      { label: "Marine Corps", value: "177,000", icon: Shield },
+    ],
+    contractorSplit: [
+      { name: "Private Contractors", value: 65, fill: "#f59e0b" },
+      { name: "Gov/Internal", value: 35, fill: "#3b82f6" },
+    ],
+  },
+  "Air Force": {
+    breakdown: [
+      { category: "Personnel", amount: 42, fill: "#8b5cf6" },
+      { category: "Operations & Maintenance", amount: 71, fill: "#a78bfa" },
+      { category: "Procurement", amount: 60, fill: "#c4b5fd" },
+      { category: "R&D", amount: 46, fill: "#ddd6fe" },
+      { category: "Construction", amount: 3, fill: "#ede9fe" },
+    ],
+    forceStructure: [
+      { label: "Active Duty", value: "323,000", icon: Users },
+      { label: "Aircraft", value: "5,000+", icon: Plane },
+      { label: "ICBMs", value: "400", icon: AlertTriangle },
+      { label: "Overseas Bases", value: "76", icon: Globe },
+    ],
+    contractorSplit: [
+      { name: "Private Contractors", value: 70, fill: "#f59e0b" },
+      { name: "Gov/Internal", value: 30, fill: "#8b5cf6" },
+    ],
+  },
+  "Space Force": {
+    breakdown: [
+      { category: "Personnel", amount: 1.2, fill: "#06b6d4" },
+      { category: "Operations & Maintenance", amount: 5.8, fill: "#22d3ee" },
+      { category: "Procurement", amount: 4.5, fill: "#67e8f9" },
+      { category: "R&D", amount: 17.5, fill: "#a5f3fc" }, // R&D heavy
+    ],
+    forceStructure: [
+      { label: "Guardians", value: "8,600", icon: Users },
+      { label: "Satellites", value: "150+", icon: Globe },
+      { label: "Launch Vehicles", value: "12", icon: Target },
+    ],
+    contractorSplit: [
+      { name: "Private Contractors", value: 85, fill: "#f59e0b" },
+      { name: "Gov/Internal", value: 15, fill: "#06b6d4" },
+    ],
+  },
+  "Defense-Wide": {
+    breakdown: [
+      { category: "Personnel", amount: 0, fill: "#f59e0b" }, // Often included in services or agencies
+      { category: "Operations & Maintenance", amount: 105, fill: "#fbbf24" },
+      { category: "Procurement", amount: 12, fill: "#fcd34d" },
+      { category: "R&D", amount: 36, fill: "#fde68a" },
+      { category: "Medical/Health", amount: 60, fill: "#fef3c7" },
+      { category: "Intel/Secret", amount: 68, fill: "#fffbeb" },
+    ],
+    forceStructure: [
+      { label: "Civilian Employees", value: "795,000", icon: Briefcase },
+      { label: "Intelligence Agencies", value: "18", icon: Shield },
+      { label: "Health Beneficiaries", value: "9.6M", icon: Users },
+    ],
+    contractorSplit: [
+      { name: "Private Contractors", value: 50, fill: "#f59e0b" },
+      { name: "Gov/Internal", value: 50, fill: "#9ca3af" },
+    ],
+  },
+}
 
 export default function MilitarySpendingBreakdown() {
   const [selectedTab, setSelectedTab] = useState("overview")
@@ -273,17 +388,107 @@ export default function MilitarySpendingBreakdown() {
             })}
           </div>
 
-          {selectedBranch && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{selectedBranch} Detailed Breakdown</CardTitle>
-                <CardDescription>Specific spending categories for {selectedBranch}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Detailed breakdown for {selectedBranch} would be displayed here</p>
-                  <p className="text-sm">Including personnel, equipment, operations, and R&D costs</p>
+          {selectedBranch ? (
+            <div className="space-y-6 animate-in fade-in duration-500">
+              {/* Breakdown Chart */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Breakdown Chart */}
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle>{selectedBranch} Budget Allocation</CardTitle>
+                    <CardDescription>Spending distribution by category</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart layout="vertical" data={branchDetails[selectedBranch].breakdown} margin={{ left: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" tickFormatter={(val) => `$${val}B`} />
+                        <YAxis
+                          type="category"
+                          dataKey="category"
+                          width={150}
+                          style={{ fontSize: "12px", fontWeight: 500 }}
+                        />
+                        <Tooltip formatter={(value) => [`$${value}B`, "Amount"]} cursor={{ fill: "transparent" }} />
+                        <Bar dataKey="amount" radius={[0, 4, 4, 0]}>
+                          {branchDetails[selectedBranch].breakdown.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Force Structure & Contractor Data */}
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Force Structure</CardTitle>
+                      <CardDescription>Key assets and personnel</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {branchDetails[selectedBranch].forceStructure.map((item, idx) => {
+                          const ItemIcon = item.icon
+                          return (
+                            <div key={idx} className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gray-100 rounded-lg">
+                                  <ItemIcon className="h-4 w-4 text-gray-600" />
+                                </div>
+                                <span className="text-sm font-medium">{item.label}</span>
+                              </div>
+                              <span className="font-bold text-gray-900">{item.value}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Contractor vs. Organic</CardTitle>
+                      <CardDescription>Spending execution split</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[150px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={branchDetails[selectedBranch].contractorSplit}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={40}
+                              outerRadius={60}
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              {branchDetails[selectedBranch].contractorSplit.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend verticalAlign="bottom" height={36} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Card className="bg-slate-50 border-dashed">
+              <CardContent className="py-12">
+                <div className="text-center text-gray-500">
+                  <Shield className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                  <h3 className="text-lg font-medium mb-1">Select a Branch</h3>
+                  <p>
+                    Click on a service branch above to see detailed spending breakdown, force structure, and contractor
+                    analysis.
+                  </p>
                 </div>
               </CardContent>
             </Card>
