@@ -27,6 +27,16 @@ interface TaxPolicy {
   revenue: number
 }
 
+interface RevenueOption {
+  id: string
+  name: string
+  description: string
+  currentRevenue: number // In billions
+  proposedRevenue: number // In billions
+  canEdit: boolean
+  rate?: number // Optional tax rate if applicable (e.g., 21%)
+}
+
 export default function FullProposalGenerator() {
   const [proposalTitle, setProposalTitle] = useState("Comprehensive Budget Reform Act of 2025")
   const [proposalSummary, setProposalSummary] = useState("")
@@ -34,6 +44,58 @@ export default function FullProposalGenerator() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedProposal, setGeneratedProposal] = useState<any>(null)
+
+  const [revenueOptions, setRevenueOptions] = useState<RevenueOption[]>([
+    {
+      id: "corporate_tax",
+      name: "Corporate Income Tax",
+      description: "Tax on corporate profits (Current Rate: 21%)",
+      currentRevenue: 420,
+      proposedRevenue: 420,
+      canEdit: true,
+      rate: 21,
+    },
+    {
+      id: "loophole_closures",
+      name: "Corporate Loophole Closures",
+      description: "Eliminating carried interest, offshoring incentives, and specific industry subsidies",
+      currentRevenue: 0,
+      proposedRevenue: 0,
+      canEdit: true,
+    },
+    {
+      id: "capital_gains",
+      name: "Capital Gains Tax Reform",
+      description: "Adjusting tax rates on investment income for high earners",
+      currentRevenue: 250,
+      proposedRevenue: 250,
+      canEdit: true,
+    },
+    {
+      id: "estate_tax",
+      name: "Estate & Wealth Tax",
+      description: "Taxes on large inheritances and accumulated wealth",
+      currentRevenue: 33,
+      proposedRevenue: 33,
+      canEdit: true,
+    },
+    {
+      id: "carbon_tax",
+      name: "Carbon Emissions Tax",
+      description: "New tax on carbon emissions to reduce pollution",
+      currentRevenue: 0,
+      proposedRevenue: 0,
+      canEdit: true,
+    },
+    {
+      id: "financial_tax",
+      name: "Financial Transaction Tax",
+      description: "Small fee on stock, bond, and derivative trades",
+      currentRevenue: 0,
+      proposedRevenue: 0,
+      canEdit: true,
+    },
+  ])
 
   // Budget categories with 2025 post-"One Big Beautiful Bill Act" baseline
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([
@@ -64,6 +126,12 @@ export default function FullProposalGenerator() {
     setBudgetItems(updated)
   }
 
+  const updateRevenueOption = (index: number, newValue: number) => {
+    const updated = [...revenueOptions]
+    updated[index].proposedRevenue = newValue
+    setRevenueOptions(updated)
+  }
+
   const updateTaxPolicy = (index: number, newRate: number) => {
     const updated = [...taxPolicies]
     updated[index].proposedRate = newRate
@@ -75,12 +143,20 @@ export default function FullProposalGenerator() {
 
   const calculateTotals = () => {
     const totalSpending = budgetItems.reduce((sum, item) => sum + item.proposed, 0)
-    const totalRevenue =
-      4550 +
-      taxPolicies.reduce(
-        (sum, policy) => sum + (policy.revenue - [400, 800, 600, 500, 300][taxPolicies.indexOf(policy)]),
-        0,
-      )
+
+    const incomeTaxChange = taxPolicies.reduce(
+      (sum, policy) => sum + (policy.revenue - [400, 800, 600, 500, 300][taxPolicies.indexOf(policy)]),
+      0,
+    )
+
+    const otherRevenueChange = revenueOptions.reduce(
+      (sum, option) => sum + (option.proposedRevenue - option.currentRevenue),
+      0,
+    )
+
+    // Base revenue (4550) + Income Tax Changes + Other Revenue Changes
+    const totalRevenue = 4550 + incomeTaxChange + otherRevenueChange
+
     const deficit = totalRevenue - totalSpending
 
     return { totalSpending, totalRevenue, deficit }
@@ -105,6 +181,7 @@ export default function FullProposalGenerator() {
         },
         spendingChanges: budgetItems.filter((item) => item.change !== 0),
         taxChanges: taxPolicies.filter((policy) => policy.proposedRate !== policy.currentRate),
+        revenueChanges: revenueOptions.filter((option) => option.proposedRevenue !== option.currentRevenue),
         implementation: generateImplementationPlan(),
         politicalAnalysis: generatePoliticalAnalysis(),
         economicImpact: generateEconomicImpact(),
@@ -137,9 +214,10 @@ export default function FullProposalGenerator() {
   const generatePoliticalAnalysis = () => {
     const spendingCuts = budgetItems.filter((item) => item.change < 0).length
     const taxIncreases = taxPolicies.filter((policy) => policy.proposedRate > policy.currentRate).length
+    const revenueIncreases = revenueOptions.filter((opt) => opt.proposedRevenue > opt.currentRevenue).length
 
     return {
-      feasibility: spendingCuts > 3 || taxIncreases > 2 ? "Challenging" : "Moderate",
+      feasibility: spendingCuts > 3 || taxIncreases + revenueIncreases > 2 ? "Challenging" : "Moderate",
       coalitionBuilding: "Requires bipartisan support and stakeholder engagement",
       risks: "Political opposition to spending cuts and tax increases",
       opportunities: "Fiscal responsibility messaging and deficit reduction benefits",
@@ -438,7 +516,9 @@ export default function FullProposalGenerator() {
 
     <div class="section">
         <div class="section-title">Tax Policy Changes</div>
-        <div class="subsection-title">Proposed Modifications to Federal Tax Rates</div>
+        
+        <!-- Personal Income Tax Section -->
+        <div class="subsection-title">Personal Income Tax Reform</div>
         ${
           generatedProposal.taxChanges.length > 0
             ? generatedProposal.taxChanges
@@ -446,7 +526,7 @@ export default function FullProposalGenerator() {
                   (policy: TaxPolicy) => `
             <div class="change-item">
                 <div>
-                    <div class="change-item-title">${policy.bracket}</div>
+                    <div class="change-item-title">${policy.bracket} Bracket</div>
                     <div class="change-item-detail">Current Rate: ${(policy.currentRate * 100).toFixed(1)}% → Proposed Rate: ${(policy.proposedRate * 100).toFixed(1)}%</div>
                 </div>
                 <div class="change-amount">
@@ -457,7 +537,31 @@ export default function FullProposalGenerator() {
             `,
                 )
                 .join("")
-            : '<p style="color: #6b7280; font-style: italic;">No tax policy changes proposed in this scenario.</p>'
+            : '<p style="color: #6b7280; font-style: italic; margin-bottom: 20px;">No changes to personal income tax rates.</p>'
+        }
+
+        <!-- Corporate & Alternative Revenue Section to HTML -->
+        <div class="subsection-title" style="margin-top: 30px;">Corporate & Alternative Revenue</div>
+        ${
+          generatedProposal.revenueChanges.length > 0
+            ? generatedProposal.revenueChanges
+                .map(
+                  (option: RevenueOption) => `
+            <div class="change-item">
+                <div>
+                    <div class="change-item-title">${option.name}</div>
+                    <div class="change-item-detail">${option.description}</div>
+                    <div class="change-item-detail">Current Revenue: $${option.currentRevenue.toLocaleString()}B → Proposed: $${option.proposedRevenue.toLocaleString()}B</div>
+                </div>
+                <div class="change-amount">
+                    <div class="change-value ${option.proposedRevenue > option.currentRevenue ? "positive" : "negative"}">${option.proposedRevenue > option.currentRevenue ? "+" : ""}$${(option.proposedRevenue - option.currentRevenue).toLocaleString()}B</div>
+                    <div class="change-percent">Net Change</div>
+                </div>
+            </div>
+            `,
+                )
+                .join("")
+            : '<p style="color: #6b7280; font-style: italic;">No changes to corporate or alternative revenue sources.</p>'
         }
         
         <div class="info-box">
@@ -687,6 +791,10 @@ export default function FullProposalGenerator() {
                         <span className="ml-2">{generatedProposal.taxChanges.length} brackets</span>
                       </div>
                       <div className="text-sm">
+                        <span className="font-medium">Revenue Changes:</span>
+                        <span className="ml-2">{generatedProposal.revenueChanges.length} sources</span>
+                      </div>
+                      <div className="text-sm">
                         <span className="font-medium">Approach:</span>
                         <span className="ml-2">{generatedProposal.approach}</span>
                       </div>
@@ -754,25 +862,60 @@ export default function FullProposalGenerator() {
             <TabsContent value="revenue">
               <Card>
                 <CardHeader>
-                  <CardTitle>Tax Policy Changes</CardTitle>
-                  <CardDescription>Proposed modifications to federal tax rates</CardDescription>
+                  <CardTitle>Revenue Changes</CardTitle>
+                  <CardDescription>Proposed modifications to federal revenue streams</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {generatedProposal.taxChanges.map((policy: TaxPolicy, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{policy.bracket}</h4>
-                          <p className="text-sm text-gray-600">
-                            {(policy.currentRate * 100).toFixed(1)}% → {(policy.proposedRate * 100).toFixed(1)}%
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-mono">${policy.revenue.toLocaleString()}B</div>
-                          <div className="text-sm text-gray-600">Annual Revenue</div>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="mb-6">
+                      <h4 className="font-medium text-lg mb-3">Personal Income Tax Reform</h4>
+                      {generatedProposal.taxChanges.length > 0 ? (
+                        generatedProposal.taxChanges.map((policy: TaxPolicy, index: number) => (
+                          <div key={index} className="flex items-center justify-between p-4 border rounded-lg mb-3">
+                            <div>
+                              <h4 className="font-medium">{policy.bracket}</h4>
+                              <p className="text-sm text-gray-600">
+                                {(policy.currentRate * 100).toFixed(1)}% → {(policy.proposedRate * 100).toFixed(1)}%
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-mono">${policy.revenue.toLocaleString()}B</div>
+                              <div className="text-sm text-gray-600">Annual Revenue</div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">No changes to personal income tax rates.</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-lg mb-3">Corporate & Alternative Revenue</h4>
+                      {generatedProposal.revenueChanges.length > 0 ? (
+                        generatedProposal.revenueChanges.map((option: RevenueOption, index: number) => (
+                          <div key={option.id} className="flex items-center justify-between p-4 border rounded-lg mb-3">
+                            <div>
+                              <h4 className="font-medium">{option.name}</h4>
+                              <p className="text-sm text-gray-600">{option.description}</p>
+                              <p className="text-sm text-gray-600">
+                                Current: ${option.currentRevenue.toLocaleString()}B → Proposed: $
+                                {option.proposedRevenue.toLocaleString()}B
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-mono">
+                                ${(option.proposedRevenue - option.currentRevenue).toLocaleString()}B
+                              </div>
+                              <div className="text-sm text-gray-600">Net Change</div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">
+                          No changes to corporate or alternative revenue sources.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -898,9 +1041,8 @@ export default function FullProposalGenerator() {
             <Tabs value={currentStep.toString()} className="space-y-6">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="1">Setup</TabsTrigger>
-                <TabsTrigger value="2">Spending</TabsTrigger>
-                <TabsTrigger value="3">Revenue</TabsTrigger>
-                <TabsTrigger value="4">Generate</TabsTrigger>
+                <TabsTrigger value="2">Spending & Revenue</TabsTrigger>
+                <TabsTrigger value="3">Review</TabsTrigger>
               </TabsList>
 
               <TabsContent value="1" className="space-y-6">
@@ -945,92 +1087,100 @@ export default function FullProposalGenerator() {
 
                 <div className="flex justify-end">
                   <Button onClick={() => setCurrentStep(2)} disabled={!selectedApproach}>
-                    Next: Configure Spending
+                    Next: Configure Spending & Revenue
                   </Button>
                 </div>
               </TabsContent>
 
               <TabsContent value="2" className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Spending Configuration</h3>
-                  <div className="space-y-4">
-                    {budgetItems.map((item, index) => (
-                      <div key={item.category} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{item.category}</h4>
-                          <p className="text-sm text-gray-600">Current: ${item.current.toLocaleString()}B</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Input
-                            type="number"
-                            value={item.proposed}
-                            onChange={(e) => updateBudgetItem(index, Number(e.target.value))}
-                            className="w-24"
-                          />
-                          <div className="text-right min-w-[80px]">
-                            <div
-                              className={`text-sm font-mono ${item.change > 0 ? "text-red-600" : item.change < 0 ? "text-green-600" : "text-gray-600"}`}
-                            >
-                              {item.change > 0 ? "+" : ""}
-                              {item.change.toFixed(0)}B
+                {/* Step 2: Spending and Revenue Configuration */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Spending Configuration</h3>
+                    <div className="space-y-4">
+                      {budgetItems.map((item, index) => (
+                        <div key={item.category} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{item.category}</h4>
+                            <p className="text-sm text-gray-600">Current: ${item.current.toLocaleString()}B</p>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <Input
+                              type="number"
+                              value={item.proposed}
+                              onChange={(e) => updateBudgetItem(index, Number(e.target.value))}
+                              className="w-24"
+                            />
+                            <div className="text-right min-w-[80px]">
+                              <div
+                                className={`text-sm font-mono ${item.change > 0 ? "text-red-600" : item.change < 0 ? "text-green-600" : "text-gray-600"}`}
+                              >
+                                {item.change > 0 ? "+" : ""}
+                                {item.change.toFixed(0)}B
+                              </div>
+                              <div className="text-xs text-gray-500">{item.changePercent.toFixed(1)}%</div>
                             </div>
-                            <div className="text-xs text-gray-500">{item.changePercent.toFixed(1)}%</div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                    Back
-                  </Button>
-                  <Button onClick={() => setCurrentStep(3)}>Next: Configure Revenue</Button>
+                  <div className="pt-6 border-t">
+                    <h3 className="text-lg font-medium mb-4">Corporate & Alternative Revenue</h3>
+                    <div className="space-y-6">
+                      {revenueOptions.map((option, index) => (
+                        <div key={option.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <Label className="text-base font-bold text-slate-800">{option.name}</Label>
+                              <p className="text-xs text-slate-500 mt-1">{option.description}</p>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-mono font-bold text-lg text-emerald-600">
+                                ${option.proposedRevenue.toLocaleString()}B
+                              </div>
+                              {option.proposedRevenue !== option.currentRevenue && (
+                                <div
+                                  className={`text-xs ${option.proposedRevenue > option.currentRevenue ? "text-emerald-600" : "text-red-600"}`}
+                                >
+                                  {option.proposedRevenue > option.currentRevenue ? "+" : ""}$
+                                  {Math.abs(option.proposedRevenue - option.currentRevenue).toLocaleString()}B
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex gap-4 items-center mt-4">
+                            <span className="text-xs w-12 text-right text-slate-500">Min</span>
+                            <Input
+                              type="range"
+                              min={0}
+                              max={option.currentRevenue > 0 ? option.currentRevenue * 2 : 500}
+                              step={10}
+                              value={option.proposedRevenue}
+                              onChange={(e) => updateRevenueOption(index, Number.parseInt(e.target.value))}
+                              className="flex-1"
+                            />
+                            <span className="text-xs w-12 text-slate-500">Max</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-6">
+                    <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+                    <Button onClick={() => setCurrentStep(3)}>Continue to Review</Button>
+                  </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="3" className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Tax Policy Configuration</h3>
-                  <div className="space-y-4">
-                    {taxPolicies.map((policy, index) => (
-                      <div key={policy.bracket} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <h4 className="font-medium">{policy.bracket}</h4>
-                          <p className="text-sm text-gray-600">
-                            Current Rate: {(policy.currentRate * 100).toFixed(1)}%
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="1"
-                            value={policy.proposedRate}
-                            onChange={(e) => updateTaxPolicy(index, Number(e.target.value))}
-                            className="w-24"
-                          />
-                          <div className="text-right min-w-[100px]">
-                            <div className="text-sm font-mono">${policy.revenue.toLocaleString()}B</div>
-                            <div className="text-xs text-gray-500">Revenue</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setCurrentStep(2)}>
-                    Back
-                  </Button>
-                  <Button onClick={() => setCurrentStep(4)}>Next: Generate Proposal</Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="4" className="space-y-6">
+                {/* Step 3: Review & Generate */}
                 <div className="text-center">
                   <h3 className="text-lg font-medium mb-4">Proposal Summary</h3>
 
@@ -1088,8 +1238,9 @@ export default function FullProposalGenerator() {
                   </Button>
                 </div>
 
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setCurrentStep(3)}>
+                <div className="flex justify-between pt-6">
+                  <Button variant="outline" onClick={() => setCurrentStep(2)}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
                 </div>
