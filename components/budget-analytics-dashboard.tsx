@@ -5,54 +5,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart3, Users, TrendingUp, Target, Clock, MapPin, Lightbulb, AlertCircle } from "lucide-react"
-
-// Mock data - in a real app, this would come from your database
-const mockAnalytics = {
-  totalSessions: 15847,
-  completedBudgets: 8923,
-  averageDeficitReduction: 67.3,
-  popularChoices: [
-    { name: "Defense Spending Cuts", percentage: 78, change: -156 },
-    { name: "Corporate Tax Increase", percentage: 71, change: +180 },
-    { name: "Carbon Tax Implementation", percentage: 64, change: +120 },
-    { name: "Infrastructure Investment", percentage: 59, change: +85 },
-    { name: "Medicare Expansion", percentage: 45, change: +95 },
-  ],
-  regionalPreferences: [
-    { region: "Northeast", topChoice: "Infrastructure Investment", percentage: 68 },
-    { region: "Southeast", topChoice: "Defense Spending Cuts", percentage: 72 },
-    { region: "Midwest", topChoice: "Corporate Tax Increase", percentage: 65 },
-    { region: "West", topChoice: "Carbon Tax Implementation", percentage: 71 },
-    { region: "Southwest", topChoice: "Defense Spending Cuts", percentage: 69 },
-  ],
-  timeSeriesData: [
-    { date: "2025-01", sessions: 1200, avgReduction: 45.2 },
-    { date: "2025-02", sessions: 1850, avgReduction: 52.1 },
-    { date: "2025-03", sessions: 2100, avgReduction: 58.7 },
-    { date: "2025-04", sessions: 2450, avgReduction: 61.3 },
-    { date: "2025-05", sessions: 2890, avgReduction: 64.8 },
-    { date: "2025-06", sessions: 3200, avgReduction: 67.3 },
-    { date: "2025-07", sessions: 2156, avgReduction: 67.3 },
-  ],
-  politicalFeasibility: [
-    { category: "Defense Cuts", support: 68, opposition: 32, difficulty: "Medium" },
-    { category: "Tax Increases", support: 45, opposition: 55, difficulty: "High" },
-    { category: "Entitlement Reform", support: 23, opposition: 77, difficulty: "Extreme" },
-    { category: "Infrastructure Investment", support: 82, opposition: 18, difficulty: "Low" },
-    { category: "Climate Action", support: 58, opposition: 42, difficulty: "Medium" },
-  ],
-}
+import { Button } from "@/components/ui/button"
+import { BarChart3, Users, Target, Clock, Lightbulb, Download, Database } from "lucide-react"
+import { getBudgetAnalytics, exportBudgetSessionData, type BudgetAnalytics } from "@/lib/budget-analytics"
 
 export default function BudgetAnalyticsDashboard() {
   const [selectedTimeframe, setSelectedTimeframe] = useState<"7d" | "30d" | "90d" | "all">("30d")
   const [isLoading, setIsLoading] = useState(true)
+  const [analytics, setAnalytics] = useState<BudgetAnalytics | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoading(false), 1000)
-    return () => clearTimeout(timer)
+    async function loadData() {
+      try {
+        const data = await getBudgetAnalytics()
+        setAnalytics(data)
+      } catch (error) {
+        console.error("Failed to load analytics:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadData()
   }, [])
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const csv = await exportBudgetSessionData()
+      const blob = new Blob([csv], { type: "text/csv" })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `budget-data-${new Date().toISOString().split("T")[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error("Export failed:", error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -75,12 +70,24 @@ export default function BudgetAnalyticsDashboard() {
     )
   }
 
+  if (!analytics) return <div>No data available</div>
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Budget Analytics Dashboard</h1>
-        <p className="text-gray-600">Real-time insights from user budget exercises and policy preferences</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Budget Analytics Dashboard</h1>
+          <p className="text-gray-600">Real-time insights from user budget exercises</p>
+        </div>
+        <Button onClick={handleExport} disabled={isExporting} className="gap-2">
+          {isExporting ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          Export Raw Data (CSV)
+        </Button>
       </div>
 
       {/* Key Metrics */}
@@ -90,14 +97,13 @@ export default function BudgetAnalyticsDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Sessions</p>
-                <p className="text-2xl font-bold text-gray-900">{mockAnalytics.totalSessions.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics.totalSessions.toLocaleString()}</p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
             </div>
             <div className="mt-2 flex items-center text-sm">
-              <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-              <span className="text-green-600">+12.5%</span>
-              <span className="text-gray-600 ml-1">vs last month</span>
+              <Database className="h-4 w-4 text-blue-600 mr-1" />
+              <span className="text-gray-600">Live Database</span>
             </div>
           </CardContent>
         </Card>
@@ -107,13 +113,16 @@ export default function BudgetAnalyticsDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Completed Budgets</p>
-                <p className="text-2xl font-bold text-gray-900">{mockAnalytics.completedBudgets.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{analytics.completedSessions.toLocaleString()}</p>
               </div>
               <Target className="h-8 w-8 text-green-600" />
             </div>
             <div className="mt-2 flex items-center text-sm">
               <span className="text-gray-600">
-                {((mockAnalytics.completedBudgets / mockAnalytics.totalSessions) * 100).toFixed(1)}% completion rate
+                {analytics.totalSessions > 0
+                  ? ((analytics.completedSessions / analytics.totalSessions) * 100).toFixed(1)
+                  : 0}
+                % completion rate
               </span>
             </div>
           </CardContent>
@@ -123,15 +132,17 @@ export default function BudgetAnalyticsDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Deficit Reduction</p>
-                <p className="text-2xl font-bold text-gray-900">{mockAnalytics.averageDeficitReduction}%</p>
+                <p className="text-sm font-medium text-gray-600">Avg Budget Balance</p>
+                <p
+                  className={`text-2xl font-bold ${analytics.averageBalance >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
+                  {analytics.averageBalance > 0 ? "+" : ""}${analytics.averageBalance}B
+                </p>
               </div>
               <BarChart3 className="h-8 w-8 text-purple-600" />
             </div>
             <div className="mt-2 flex items-center text-sm">
-              <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-              <span className="text-green-600">+5.2%</span>
-              <span className="text-gray-600 ml-1">improvement</span>
+              <span className="text-gray-600">Average Outcome</span>
             </div>
           </CardContent>
         </Card>
@@ -142,13 +153,13 @@ export default function BudgetAnalyticsDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Balanced Budgets</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {Math.round(mockAnalytics.completedBudgets * 0.23).toLocaleString()}
+                  {analytics.spendingVsRevenue.balanced.toLocaleString()}
                 </p>
               </div>
               <Clock className="h-8 w-8 text-orange-600" />
             </div>
             <div className="mt-2 flex items-center text-sm">
-              <span className="text-gray-600">23% achieve full balance</span>
+              <span className="text-gray-600">Achieved Surplus</span>
             </div>
           </CardContent>
         </Card>
@@ -158,8 +169,8 @@ export default function BudgetAnalyticsDashboard() {
       <Tabs defaultValue="popular" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="popular">Popular Choices</TabsTrigger>
-          <TabsTrigger value="regional">Regional Trends</TabsTrigger>
-          <TabsTrigger value="feasibility">Political Feasibility</TabsTrigger>
+          <TabsTrigger value="approach">Budget Approach</TabsTrigger>
+          <TabsTrigger value="partisan">Partisan Analysis</TabsTrigger>
           <TabsTrigger value="insights">Key Insights</TabsTrigger>
         </TabsList>
 
@@ -167,108 +178,125 @@ export default function BudgetAnalyticsDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Most Popular Budget Choices</CardTitle>
-              <CardDescription>What users are choosing most frequently in their budget exercises</CardDescription>
+              <CardDescription>Policies chosen by the most users</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockAnalytics.popularChoices.map((choice, index) => (
+                {analytics.popularPolicies.map((choice, index) => (
                   <div key={index} className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium">{choice.name}</span>
+                      <span className="font-medium">{choice.policy_name}</span>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline">{choice.percentage}% of users</Badge>
-                        <span
-                          className={`text-sm font-medium ${choice.change > 0 ? "text-green-600" : "text-red-600"}`}
-                        >
-                          {choice.change > 0 ? "+" : ""}${choice.change}B avg
-                        </span>
+                        <Badge variant="outline">{choice.popularity_percentage}% Support</Badge>
                       </div>
                     </div>
-                    <Progress value={choice.percentage} className="h-2" />
+                    <Progress value={choice.popularity_percentage} className="h-2" />
                   </div>
                 ))}
+                {analytics.popularPolicies.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">
+                    Not enough data yet to determine popular choices.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="regional" className="space-y-4">
+        <TabsContent value="approach" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Regional Preferences</CardTitle>
-              <CardDescription>How budget preferences vary across different regions</CardDescription>
+              <CardTitle>How Users Balance the Budget</CardTitle>
+              <CardDescription>Preference for spending cuts vs revenue increases</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                {mockAnalytics.regionalPreferences.map((region, index) => (
-                  <Card key={index} className="border">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MapPin className="h-4 w-4 text-gray-600" />
-                        <span className="font-medium">{region.region}</span>
-                      </div>
-                      <div className="text-sm text-gray-600 mb-2">
-                        Top Choice: <span className="font-medium">{region.topChoice}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Progress value={region.percentage} className="h-2 flex-1" />
-                        <span className="text-sm font-medium">{region.percentage}%</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="font-medium">Spending Cut Focused</span>
+                    <span>{analytics.spendingVsRevenue.spending_focused} users</span>
+                  </div>
+                  <Progress
+                    value={(analytics.spendingVsRevenue.spending_focused / (analytics.completedSessions || 1)) * 100}
+                    className="h-4 bg-red-100 [&>div]:bg-red-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="font-medium">Revenue Increase Focused</span>
+                    <span>{analytics.spendingVsRevenue.revenue_focused} users</span>
+                  </div>
+                  <Progress
+                    value={(analytics.spendingVsRevenue.revenue_focused / (analytics.completedSessions || 1)) * 100}
+                    className="h-4 bg-green-100 [&>div]:bg-green-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="font-medium">Balanced Approach</span>
+                    <span>{analytics.spendingVsRevenue.balanced} users</span>
+                  </div>
+                  <Progress
+                    value={(analytics.spendingVsRevenue.balanced / (analytics.completedSessions || 1)) * 100}
+                    className="h-4 bg-blue-100 [&>div]:bg-blue-500"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="feasibility" className="space-y-4">
+        <TabsContent value="partisan" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Political Feasibility Analysis</CardTitle>
-              <CardDescription>
-                Public support levels and implementation difficulty for major policy categories
-              </CardDescription>
+              <CardTitle>Partisan Breakdown</CardTitle>
+              <CardDescription>Average outcomes by political affiliation</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {mockAnalytics.politicalFeasibility.map((item, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="font-medium">{item.category}</span>
-                      <Badge
-                        variant="outline"
-                        className={
-                          item.difficulty === "Low"
-                            ? "border-green-300 text-green-700"
-                            : item.difficulty === "Medium"
-                              ? "border-yellow-300 text-yellow-700"
-                              : item.difficulty === "High"
-                                ? "border-orange-300 text-orange-700"
-                                : "border-red-300 text-red-700"
-                        }
-                      >
-                        {item.difficulty} Difficulty
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm text-gray-600 mb-1">Support</div>
-                        <div className="flex items-center gap-2">
-                          <Progress value={item.support} className="h-2 flex-1" />
-                          <span className="text-sm font-medium text-green-600">{item.support}%</span>
+              <div className="grid md:grid-cols-2 gap-8">
+                <div>
+                  <h4 className="font-medium mb-4">Participation by Party</h4>
+                  <div className="space-y-3">
+                    {["Progressive", "Liberal", "Moderate", "Conservative"].map((party) => {
+                      const count =
+                        (analytics.partisanBreakdown?.[
+                          party.toLowerCase() as keyof typeof analytics.partisanBreakdown
+                        ] as number) || 0
+                      const total =
+                        (analytics.partisanBreakdown?.progressive || 0) +
+                          (analytics.partisanBreakdown?.liberal || 0) +
+                          (analytics.partisanBreakdown?.moderate || 0) +
+                          (analytics.partisanBreakdown?.conservative || 0) || 1
+
+                      return (
+                        <div key={party}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>{party}</span>
+                            <span>{count} users</span>
+                          </div>
+                          <Progress value={(count / total) * 100} className="h-2" />
                         </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-gray-600 mb-1">Opposition</div>
-                        <div className="flex items-center gap-2">
-                          <Progress value={item.opposition} className="h-2 flex-1" />
-                          <span className="text-sm font-medium text-red-600">{item.opposition}%</span>
-                        </div>
-                      </div>
-                    </div>
+                      )
+                    })}
                   </div>
-                ))}
+                </div>
+                <div>
+                  <h4 className="font-medium mb-4">Average Deficit by Party</h4>
+                  <div className="space-y-3">
+                    {["Progressive", "Liberal", "Moderate", "Conservative"].map((party) => {
+                      const deficit = analytics.partisanBreakdown?.avg_deficit_by_party?.[party.toLowerCase()] || 0
+                      const isSurplus = deficit >= 0
+                      return (
+                        <div key={party} className="flex justify-between items-center border-b pb-2">
+                          <span>{party}</span>
+                          <span className={`font-bold ${isSurplus ? "text-green-600" : "text-red-600"}`}>
+                            {isSurplus ? "+" : ""}${deficit}B
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -285,20 +313,12 @@ export default function BudgetAnalyticsDashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="text-sm">
-                  <strong>Defense Spending:</strong> 78% of users reduce defense spending, averaging $156B in cuts. This
-                  suggests broad public support for military budget reductions.
+                  <strong>Consensus Areas:</strong> Analyze the "Popular Choices" tab to see which policies have &gt;50%
+                  support. These represent bipartisan opportunities.
                 </div>
                 <div className="text-sm">
-                  <strong>Tax Policy:</strong> Corporate tax increases are popular (71% adoption) while individual tax
-                  increases face more resistance.
-                </div>
-                <div className="text-sm">
-                  <strong>Regional Differences:</strong> Western states show strongest support for climate action, while
-                  Southern states prefer defense cuts.
-                </div>
-                <div className="text-sm">
-                  <strong>Completion Rate:</strong> 56% completion rate indicates strong user engagement with the budget
-                  exercise.
+                  <strong>Deficit Gap:</strong> Compare the "Average Budget Balance" to the current deficit (-$1.6T). If
+                  users avg -$500B, it shows the public is willing to close 2/3 of the gap.
                 </div>
               </CardContent>
             </Card>
@@ -306,26 +326,17 @@ export default function BudgetAnalyticsDashboard() {
             <Card className="border-orange-200 bg-orange-50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-orange-900">
-                  <AlertCircle className="h-5 w-5" />
-                  Policy Recommendations
+                  <Download className="h-5 w-5" />
+                  Data Mining
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="text-sm">
-                  <strong>Start with Popular Measures:</strong> Begin with defense cuts and corporate tax increases,
-                  which have broad support.
+                  <strong>Export Analysis:</strong> Use the "Export Raw Data" button to download the full CSV dataset.
                 </div>
                 <div className="text-sm">
-                  <strong>Regional Strategy:</strong> Tailor messaging to regional preferences - emphasize climate
-                  benefits in the West, fiscal responsibility in the South.
-                </div>
-                <div className="text-sm">
-                  <strong>Gradual Implementation:</strong> Phase in changes over 3-5 years to build public support and
-                  allow economic adjustment.
-                </div>
-                <div className="text-sm">
-                  <strong>Bipartisan Elements:</strong> Infrastructure investment shows broad appeal across regions and
-                  political affiliations.
+                  <strong>Recommended Tools:</strong> Import the CSV into Excel, Python (pandas), or Tableau to run
+                  cluster analysis and find user archetypes.
                 </div>
               </CardContent>
             </Card>

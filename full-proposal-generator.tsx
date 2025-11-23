@@ -160,53 +160,431 @@ export default function FullProposalGenerator() {
   const exportProposal = () => {
     if (!generatedProposal) return
 
-    const content = `
-# ${generatedProposal.title}
+    const htmlContent = generateProposalHTML()
+    downloadAsHTML(htmlContent)
+  }
 
-## Executive Summary
-${generatedProposal.summary}
+  const generateProposalHTML = () => {
+    const { totalSpending, totalRevenue, deficit } = calculateTotals()
+    const isBalanced = deficit >= 0
 
-## Fiscal Impact
-- Total Spending: $${generatedProposal.fiscalImpact.totalSpending.toLocaleString()}B
-- Total Revenue: $${generatedProposal.fiscalImpact.totalRevenue.toLocaleString()}B
-- Budget Balance: $${generatedProposal.fiscalImpact.deficit.toLocaleString()}B
-- Deficit Reduction: $${generatedProposal.fiscalImpact.deficitReduction.toLocaleString()}B
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${generatedProposal.title}</title>
+    <style>
+        body { 
+            font-family: 'Georgia', 'Times New Roman', serif; 
+            margin: 40px; 
+            line-height: 1.6; 
+            color: #1f2937; 
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 4px solid #2563eb; 
+            padding-bottom: 30px; 
+            margin-bottom: 40px; 
+        }
+        .title { 
+            font-size: 32px; 
+            font-weight: bold; 
+            color: #1e40af; 
+            margin-bottom: 15px; 
+            letter-spacing: -0.5px;
+        }
+        .subtitle { 
+            font-size: 18px; 
+            color: #64748b; 
+            font-style: italic;
+        }
+        .executive-summary {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 6px solid #2563eb;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+        .section { 
+            margin-bottom: 40px; 
+            page-break-inside: avoid;
+        }
+        .section-title { 
+            font-size: 24px; 
+            font-weight: bold; 
+            color: #1e40af; 
+            border-bottom: 3px solid #bfdbfe; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+        }
+        .subsection-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #374151;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .metrics-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 20px; 
+            margin: 30px 0;
+        }
+        .metric-card { 
+            background: #f8fafc; 
+            padding: 20px; 
+            border-radius: 10px; 
+            text-align: center;
+            border: 2px solid #e2e8f0;
+        }
+        .metric-value { 
+            font-size: 28px; 
+            font-weight: bold; 
+            color: #1e40af; 
+            margin-bottom: 5px;
+        }
+        .metric-label { 
+            font-size: 14px; 
+            color: #64748b; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .change-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .change-item-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .change-item-detail {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .change-amount {
+            text-align: right;
+        }
+        .change-value {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .change-percent {
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .positive { color: #dc2626; }
+        .negative { color: #059669; }
+        .neutral { color: #6b7280; }
+        .phase-box {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .phase-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        .phase-content {
+            color: #4b5563;
+            line-height: 1.8;
+        }
+        .info-box {
+            background: #ecfeff;
+            border-left: 4px solid #06b6d4;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background: #dcfce7;
+            border-left: 4px solid #22c55e;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .footer { 
+            text-align: center; 
+            margin-top: 60px; 
+            padding-top: 30px; 
+            border-top: 2px solid #e5e7eb; 
+            color: #6b7280;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+        @media print {
+            body { margin: 20px; }
+            .section { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">${generatedProposal.title}</div>
+        <div class="subtitle">Comprehensive Federal Budget Reform Proposal</div>
+        <div class="subtitle">Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</div>
+    </div>
 
-## Spending Changes
-${generatedProposal.spendingChanges
-  .map(
-    (item: BudgetItem) =>
-      `- ${item.category}: ${item.change > 0 ? "+" : ""}$${item.change.toLocaleString()}B (${item.changePercent.toFixed(1)}%)`,
-  )
-  .join("\n")}
+    <div class="executive-summary">
+        <h2 style="margin-top: 0; color: #1e40af;">Executive Summary</h2>
+        <p style="font-size: 16px; line-height: 1.8; margin: 0;">${generatedProposal.summary}</p>
+    </div>
 
-## Tax Policy Changes
-${generatedProposal.taxChanges
-  .map(
-    (policy: TaxPolicy) =>
-      `- ${policy.bracket}: ${(policy.currentRate * 100).toFixed(1)}% → ${(policy.proposedRate * 100).toFixed(1)}%`,
-  )
-  .join("\n")}
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value">$${totalSpending.toLocaleString()}B</div>
+            <div class="metric-label">Total Spending</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">$${totalRevenue.toLocaleString()}B</div>
+            <div class="metric-label">Total Revenue</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value ${isBalanced ? "positive" : "negative"}">${isBalanced ? "+" : ""}$${deficit.toLocaleString()}B</div>
+            <div class="metric-label">${isBalanced ? "Surplus" : "Deficit"}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">$${generatedProposal.fiscalImpact.deficitReduction.toLocaleString()}B</div>
+            <div class="metric-label">Deficit Reduction</div>
+        </div>
+    </div>
 
-## Implementation Plan
-- Phase 1: ${generatedProposal.implementation.phase1}
-- Phase 2: ${generatedProposal.implementation.phase2}
-- Phase 3: ${generatedProposal.implementation.phase3}
+    ${
+      isBalanced
+        ? '<div class="success-box"><strong>✓ Budget Balanced:</strong> This proposal achieves a balanced federal budget with a surplus of $' +
+          deficit.toLocaleString() +
+          "B.</div>"
+        : '<div class="warning-box"><strong>⚠ Deficit Remains:</strong> While significant progress is made, a deficit of $' +
+          Math.abs(deficit).toLocaleString() +
+          "B remains. Additional measures may be needed.</div>"
+    }
 
-## Political Analysis
-- Feasibility: ${generatedProposal.politicalAnalysis.feasibility}
-- Coalition Building: ${generatedProposal.politicalAnalysis.coalitionBuilding}
+    <div class="section">
+        <div class="section-title">Spending Changes</div>
+        <div class="subsection-title">Proposed Adjustments to Federal Spending (in Billions)</div>
+        ${
+          generatedProposal.spendingChanges.length > 0
+            ? generatedProposal.spendingChanges
+                .map(
+                  (item: BudgetItem) => `
+            <div class="change-item">
+                <div>
+                    <div class="change-item-title">${item.category}</div>
+                    <div class="change-item-detail">Current: $${item.current.toLocaleString()}B → Proposed: $${item.proposed.toLocaleString()}B</div>
+                </div>
+                <div class="change-amount">
+                    <div class="change-value ${item.change > 0 ? "positive" : "negative"}">${item.change > 0 ? "+" : ""}$${item.change.toLocaleString()}B</div>
+                    <div class="change-percent">${item.changePercent.toFixed(1)}%</div>
+                </div>
+            </div>
+            `,
+                )
+                .join("")
+            : '<p style="color: #6b7280; font-style: italic;">No spending changes proposed in this scenario.</p>'
+        }
+        
+        <div class="info-box">
+            <strong>Total Spending Impact:</strong> ${generatedProposal.fiscalImpact.totalSpending > 7200 ? "Net increase" : "Net reduction"} of $${Math.abs(generatedProposal.fiscalImpact.totalSpending - 7200).toLocaleString()}B compared to 2025 baseline.
+        </div>
+    </div>
 
-## Economic Impact
-- GDP Impact: ${generatedProposal.economicImpact.gdpImpact}
-- Employment Effect: ${generatedProposal.economicImpact.employmentEffect}
+    <div class="section">
+        <div class="section-title">Tax Policy Changes</div>
+        <div class="subsection-title">Proposed Modifications to Federal Tax Rates</div>
+        ${
+          generatedProposal.taxChanges.length > 0
+            ? generatedProposal.taxChanges
+                .map(
+                  (policy: TaxPolicy) => `
+            <div class="change-item">
+                <div>
+                    <div class="change-item-title">${policy.bracket}</div>
+                    <div class="change-item-detail">Current Rate: ${(policy.currentRate * 100).toFixed(1)}% → Proposed Rate: ${(policy.proposedRate * 100).toFixed(1)}%</div>
+                </div>
+                <div class="change-amount">
+                    <div class="change-value ${policy.proposedRate > policy.currentRate ? "positive" : "negative"}">$${policy.revenue.toLocaleString()}B</div>
+                    <div class="change-percent">Annual Revenue</div>
+                </div>
+            </div>
+            `,
+                )
+                .join("")
+            : '<p style="color: #6b7280; font-style: italic;">No tax policy changes proposed in this scenario.</p>'
+        }
+        
+        <div class="info-box">
+            <strong>Total Revenue Impact:</strong> ${generatedProposal.fiscalImpact.totalRevenue > 4550 ? "Increase" : "Decrease"} of $${Math.abs(generatedProposal.fiscalImpact.totalRevenue - 4550).toLocaleString()}B compared to 2025 baseline revenue.
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Implementation Plan</div>
+        <div class="subsection-title">5-Year Phased Approach</div>
+        
+        <div class="phase-box">
+            <div class="phase-title">Phase 1: Foundation (Year 1)</div>
+            <div class="phase-content">${generatedProposal.implementation.phase1}</div>
+        </div>
+        
+        <div class="phase-box">
+            <div class="phase-title">Phase 2: Transition (Years 2-3)</div>
+            <div class="phase-content">${generatedProposal.implementation.phase2}</div>
+        </div>
+        
+        <div class="phase-box">
+            <div class="phase-title">Phase 3: Full Implementation (Years 4-5)</div>
+            <div class="phase-content">${generatedProposal.implementation.phase3}</div>
+        </div>
+        
+        <div class="info-box">
+            <strong>Implementation Timeline:</strong> ${generatedProposal.implementation.timeline}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Political Analysis</div>
+        
+        <div style="margin-bottom: 20px;">
+            <strong>Feasibility Assessment:</strong>
+            <span class="badge ${generatedProposal.politicalAnalysis.feasibility === "Challenging" ? "badge-warning" : "badge-success"}">
+                ${generatedProposal.politicalAnalysis.feasibility}
+            </span>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <strong>Coalition Building Strategy:</strong>
+            <p style="margin: 10px 0; color: #4b5563;">${generatedProposal.politicalAnalysis.coalitionBuilding}</p>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <strong>Key Risks:</strong>
+            <p style="margin: 10px 0; color: #4b5563;">${generatedProposal.politicalAnalysis.risks}</p>
+        </div>
+        
+        <div>
+            <strong>Opportunities:</strong>
+            <p style="margin: 10px 0; color: #4b5563;">${generatedProposal.politicalAnalysis.opportunities}</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Economic Impact Assessment</div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Impact Area</th>
+                    <th>Assessment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>GDP Impact</strong></td>
+                    <td>${generatedProposal.economicImpact.gdpImpact}</td>
+                </tr>
+                <tr>
+                    <td><strong>Employment Effect</strong></td>
+                    <td>${generatedProposal.economicImpact.employmentEffect}</td>
+                </tr>
+                <tr>
+                    <td><strong>Market Response</strong></td>
+                    <td>${generatedProposal.economicImpact.marketResponse}</td>
+                </tr>
+                <tr>
+                    <td><strong>Long-term Outlook</strong></td>
+                    <td>${generatedProposal.economicImpact.longTermOutlook}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Approach & Philosophy</div>
+        <div class="info-box">
+            <strong>Selected Approach:</strong> ${generatedProposal.approach}
+            <p style="margin: 10px 0 0 0; color: #4b5563;">
+                This approach balances fiscal responsibility with economic growth considerations, 
+                emphasizing ${
+                  generatedProposal.approach.includes("spending")
+                    ? "efficient government operations and spending discipline"
+                    : generatedProposal.approach.includes("revenue")
+                      ? "fair revenue generation and progressive taxation"
+                      : "both spending efficiency and revenue optimization"
+                }.
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>${generatedProposal.title}</strong></p>
+        <p>Federal Budget Reform Proposal - ${new Date().getFullYear()}</p>
+        <p style="margin-top: 15px; font-size: 12px;">
+            This proposal represents a comprehensive approach to federal fiscal reform. 
+            Implementation requires legislative approval and may be subject to economic conditions.
+        </p>
+        <p style="font-size: 12px; color: #9ca3af;">
+            Generated using the Federal Budget Analysis Tool | For planning and analysis purposes
+        </p>
+    </div>
+</body>
+</html>
     `
+  }
 
-    const blob = new Blob([content], { type: "text/markdown" })
+  const downloadAsHTML = (htmlContent: string) => {
+    const blob = new Blob([htmlContent], { type: "text/html" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${proposalTitle.replace(/\s+/g, "_")}.md`
+    a.download = `${proposalTitle.replace(/\s+/g, "_")}_Budget_Proposal.html`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

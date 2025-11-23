@@ -15,6 +15,13 @@ export interface BudgetAnalytics {
     total_count: number
     popularity_percentage: number
   }>
+  partisanBreakdown?: {
+    conservative: number
+    moderate: number
+    liberal: number
+    progressive: number
+    avg_deficit_by_party: Record<string, number>
+  }
 }
 
 export interface UserFeedback {
@@ -134,14 +141,93 @@ export async function saveUserFeedback(sessionId: string, feedback: UserFeedback
   }
 }
 
+export async function exportBudgetSessionData(): Promise<string> {
+  try {
+    const supabase = getAdminClient()
+
+    // Fetch all sessions with feedback and choices
+    // Note: This might be heavy for very large datasets, pagination would be needed for >50k rows
+    const { data: sessions, error } = await supabase
+      .from("budget_sessions")
+      .select(`
+        id, created_at, completed, scenario_name, final_balance, total_spending, total_revenue,
+        user_feedback (
+          political_affiliation, income_bracket, difficulty_rating, would_support_plan
+        ),
+        budget_configs (
+          category, value
+        )
+      `)
+      .eq("completed", true)
+      .order("created_at", { ascending: false })
+
+    if (error) throw error
+    if (!sessions || sessions.length === 0) return "No data available"
+
+    // Create CSV header
+    const headers = [
+      "Session ID",
+      "Date",
+      "Scenario",
+      "Final Balance",
+      "Total Spending",
+      "Total Revenue",
+      "Political Affiliation",
+      "Income Bracket",
+      "Difficulty Rating",
+      "Support Plan",
+      "Defense Spending",
+      "Social Security",
+      "Healthcare",
+      "Education",
+      "Income Tax",
+      "Corporate Tax",
+    ].join(",")
+
+    // Map rows
+    const rows = sessions.map((session) => {
+      const feedback = session.user_feedback?.[0] || {}
+      const configs = session.budget_configs || []
+
+      // Helper to find config value
+      const getVal = (cat: string) => configs.find((c: any) => c.category === cat)?.value || ""
+
+      return [
+        session.id,
+        new Date(session.created_at).toISOString().split("T")[0],
+        `"${session.scenario_name || ""}"`,
+        session.final_balance,
+        session.total_spending,
+        session.total_revenue,
+        feedback.political_affiliation || "Unknown",
+        feedback.income_bracket || "Unknown",
+        feedback.difficulty_rating || "",
+        feedback.would_support_plan ? "Yes" : "No",
+        getVal("defense"),
+        getVal("social_security"),
+        getVal("healthcare"),
+        getVal("education"),
+        getVal("income_tax"),
+        getVal("corporate_tax"),
+      ].join(",")
+    })
+
+    return [headers, ...rows].join("\n")
+  } catch (error) {
+    console.error("Failed to export data:", error)
+    throw error
+  }
+}
+
 export async function getBudgetAnalytics(): Promise<BudgetAnalytics> {
   try {
     const supabase = getAdminClient()
 
     // Get session counts
-    const { data: sessions, error: sessionsError } = await supabase
-      .from("budget_sessions")
-      .select("id, completed, final_balance, total_spending, total_revenue")
+    const { data: sessions, error: sessionsError } = await supabase.from("budget_sessions").select(`
+        id, completed, final_balance, total_spending, total_revenue,
+        user_feedback (political_affiliation)
+      `)
 
     if (sessionsError) throw sessionsError
 
@@ -150,6 +236,26 @@ export async function getBudgetAnalytics(): Promise<BudgetAnalytics> {
 
     // Calculate average balance from completed sessions
     const completedSessionsData = sessions?.filter((s) => s.completed && s.final_balance !== null) || []
+
+    const partyStats: Record<string, { count: number; totalDeficit: number }> = {}
+
+    completedSessionsData.forEach((session) => {
+      const party = session.user_feedback?.[0]?.political_affiliation || "unknown"
+      if (!partyStats[party]) partyStats[party] = { count: 0, totalDeficit: 0 }
+
+      partyStats[party].count++
+      // If final_balance is negative (deficit), it's a negative number.
+      // We want average balance, so we just sum the raw balance.
+      partyStats[party].totalDeficit += Number(session.final_balance)
+    })
+
+    const avgDeficitByParty: Record<string, number> = {}
+    Object.entries(partyStats).forEach(([party, stats]) => {
+      if (stats.count > 0) {
+        avgDeficitByParty[party] = Math.round(stats.totalDeficit / stats.count)
+      }
+    })
+
     const averageBalance =
       completedSessionsData.length > 0
         ? completedSessionsData.reduce((sum, s) => sum + Number(s.final_balance), 0) / completedSessionsData.length
@@ -253,6 +359,13 @@ export async function getBudgetAnalytics(): Promise<BudgetAnalytics> {
         balanced: balanced,
       },
       popularPolicies,
+      partisanBreakdown: {
+        conservative: partyStats["conservative"]?.count || 0,
+        moderate: partyStats["moderate"]?.count || 0,
+        liberal: partyStats["liberal"]?.count || 0,
+        progressive: partyStats["progressive"]?.count || 0,
+        avg_deficit_by_party: avgDeficitByParty,
+      },
     }
   } catch (error) {
     console.error("Failed to get budget analytics:", error)
@@ -267,6 +380,13 @@ export async function getBudgetAnalytics(): Promise<BudgetAnalytics> {
         balanced: 0,
       },
       popularPolicies: [],
+      partisanBreakdown: {
+        conservative: 0,
+        moderate: 0,
+        liberal: 0,
+        progressive: 0,
+        avg_deficit_by_party: {},
+      },
     }
   }
 }
