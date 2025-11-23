@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +13,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ArrowLeft, Download, FileText, Calculator, TrendingUp, Users, AlertTriangle, CheckCircle } from "lucide-react"
+
+function DebouncedInput({
+  value: initialValue,
+  onChange,
+  debounce = 300,
+  ...props
+}: {
+  value: string | number
+  onChange: (value: string | number) => void
+  debounce?: number
+} & Omit<React.ComponentProps<typeof Input>, "onChange">) {
+  const [value, setValue] = useState(initialValue)
+  const isMounted = useRef(false)
+  const onChangeRef = useRef(onChange)
+
+  useEffect(() => {
+    onChangeRef.current = onChange
+  })
+
+  useEffect(() => {
+    setValue(initialValue)
+  }, [initialValue])
+
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true
+      return
+    }
+
+    const timeout = setTimeout(() => {
+      onChangeRef.current(value)
+    }, debounce)
+
+    return () => clearTimeout(timeout)
+  }, [value, debounce])
+
+  return <Input {...props} value={value} onChange={(e) => setValue(e.target.value)} />
+}
 
 interface BudgetItem {
   category: string
@@ -1105,10 +1145,10 @@ export default function FullProposalGenerator() {
                             <p className="text-sm text-gray-600">Current: ${item.current.toLocaleString()}B</p>
                           </div>
                           <div className="flex items-center gap-4">
-                            <Input
+                            <DebouncedInput
                               type="number"
                               value={item.proposed}
-                              onChange={(e) => updateBudgetItem(index, Number(e.target.value))}
+                              onChange={(val) => updateBudgetItem(index, Number(val))}
                               className="w-24"
                             />
                             <div className="text-right min-w-[80px]">
@@ -1153,13 +1193,13 @@ export default function FullProposalGenerator() {
 
                           <div className="flex gap-4 items-center mt-4">
                             <span className="text-xs w-12 text-right text-slate-500">Min</span>
-                            <Input
+                            <DebouncedInput
                               type="range"
                               min={0}
                               max={option.currentRevenue > 0 ? option.currentRevenue * 2 : 500}
                               step={10}
                               value={option.proposedRevenue}
-                              onChange={(e) => updateRevenueOption(index, Number.parseInt(e.target.value))}
+                              onChange={(val) => updateRevenueOption(index, Number(val))}
                               className="flex-1"
                             />
                             <span className="text-xs w-12 text-slate-500">Max</span>
