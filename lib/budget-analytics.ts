@@ -1,5 +1,3 @@
-import { createClient } from "@supabase/supabase-js"
-
 export interface BudgetAnalytics {
   totalSessions: number
   completedSessions: number
@@ -32,21 +30,7 @@ export interface UserFeedback {
   wouldSupportPlan?: boolean
 }
 
-function getAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Missing Supabase environment variables for admin operations")
-  }
-
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
-}
+// Client-side functions now call API endpoints instead of direct Supabase access
 
 export async function createBudgetSession(): Promise<string> {
   try {
@@ -64,14 +48,13 @@ export async function createBudgetSession(): Promise<string> {
 
 export async function saveBudgetConfig(sessionId: string, category: string, value: number): Promise<void> {
   try {
-    const supabase = getAdminClient()
-    const { error } = await supabase.from("budget_configs").insert({
-      session_id: sessionId,
-      category: category,
-      value: value,
+    const response = await fetch("/api/save-budget-config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, category, value }),
     })
 
-    if (error) throw error
+    if (!response.ok) throw new Error("Failed to save budget config")
   } catch (error) {
     console.error(`Failed to save config for session ${sessionId}:`, error)
   }
@@ -85,19 +68,13 @@ export async function completeSession(
   revenue: number,
 ): Promise<void> {
   try {
-    const supabase = getAdminClient()
-    const { error } = await supabase
-      .from("budget_sessions")
-      .update({
-        completed: true,
-        scenario_name: scenarioName,
-        final_balance: balance,
-        total_spending: spending,
-        total_revenue: revenue,
-      })
-      .eq("id", sessionId)
+    const response = await fetch("/api/complete-budget-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, scenarioName, balance, spending, revenue }),
+    })
 
-    if (error) throw error
+    if (!response.ok) throw new Error("Failed to complete budget session")
   } catch (error) {
     console.error(`Failed to complete session ${sessionId}:`, error)
   }
@@ -110,14 +87,13 @@ export async function trackInteraction(
   value?: string,
 ): Promise<void> {
   try {
-    const supabase = getAdminClient()
-    const { error } = await supabase.from("user_interactions").insert({
-      session_id: sessionId,
-      action: action,
-      details: { category, value },
+    const response = await fetch("/api/track-interaction", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, action, category, value }),
     })
 
-    if (error) throw error
+    if (!response.ok) throw new Error("Failed to track interaction")
   } catch (error) {
     console.error(`Failed to track interaction for session ${sessionId}:`, error)
   }
@@ -125,94 +101,32 @@ export async function trackInteraction(
 
 export async function saveUserFeedback(sessionId: string, feedback: UserFeedback): Promise<void> {
   try {
-    const supabase = getAdminClient()
-    const { error } = await supabase.from("user_feedback").insert({
-      session_id: sessionId,
-      political_affiliation: feedback.politicalAffiliation,
-      income_bracket: feedback.incomeBracket,
-      difficulty_rating: feedback.difficultyRating,
-      comments: feedback.comments,
-      would_support_plan: feedback.wouldSupportPlan,
+    const response = await fetch("/api/save-user-feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, feedback }),
     })
 
-    if (error) throw error
+    if (!response.ok) throw new Error("Failed to save user feedback")
   } catch (error) {
     console.error(`Failed to save feedback for session ${sessionId}:`, error)
   }
 }
 
-export async function exportBudgetSessionData(): Promise<string> {
+export async function exportBudgetSessionData(): Promise<void> {
   try {
-    const supabase = getAdminClient()
+    const response = await fetch("/api/export-budget-data")
+    if (!response.ok) throw new Error("Export failed")
 
-    // Fetch all sessions with feedback and choices
-    // Note: This might be heavy for very large datasets, pagination would be needed for >50k rows
-    const { data: sessions, error } = await supabase
-      .from("budget_sessions")
-      .select(`
-        id, created_at, completed, scenario_name, final_balance, total_spending, total_revenue,
-        user_feedback (
-          political_affiliation, income_bracket, difficulty_rating, would_support_plan
-        ),
-        budget_configs (
-          category, value
-        )
-      `)
-      .eq("completed", true)
-      .order("created_at", { ascending: false })
-
-    if (error) throw error
-    if (!sessions || sessions.length === 0) return "No data available"
-
-    // Create CSV header
-    const headers = [
-      "Session ID",
-      "Date",
-      "Scenario",
-      "Final Balance",
-      "Total Spending",
-      "Total Revenue",
-      "Political Affiliation",
-      "Income Bracket",
-      "Difficulty Rating",
-      "Support Plan",
-      "Defense Spending",
-      "Social Security",
-      "Healthcare",
-      "Education",
-      "Income Tax",
-      "Corporate Tax",
-    ].join(",")
-
-    // Map rows
-    const rows = sessions.map((session) => {
-      const feedback = session.user_feedback?.[0] || {}
-      const configs = session.budget_configs || []
-
-      // Helper to find config value
-      const getVal = (cat: string) => configs.find((c: any) => c.category === cat)?.value || ""
-
-      return [
-        session.id,
-        new Date(session.created_at).toISOString().split("T")[0],
-        `"${session.scenario_name || ""}"`,
-        session.final_balance,
-        session.total_spending,
-        session.total_revenue,
-        feedback.political_affiliation || "Unknown",
-        feedback.income_bracket || "Unknown",
-        feedback.difficulty_rating || "",
-        feedback.would_support_plan ? "Yes" : "No",
-        getVal("defense"),
-        getVal("social_security"),
-        getVal("healthcare"),
-        getVal("education"),
-        getVal("income_tax"),
-        getVal("corporate_tax"),
-      ].join(",")
-    })
-
-    return [headers, ...rows].join("\n")
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `budget-data-${new Date().toISOString().split("T")[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
   } catch (error) {
     console.error("Failed to export data:", error)
     throw error
@@ -221,152 +135,11 @@ export async function exportBudgetSessionData(): Promise<string> {
 
 export async function getBudgetAnalytics(): Promise<BudgetAnalytics> {
   try {
-    const supabase = getAdminClient()
+    const response = await fetch("/api/budget-analytics")
+    if (!response.ok) throw new Error("Failed to fetch analytics")
 
-    // Get session counts
-    const { data: sessions, error: sessionsError } = await supabase.from("budget_sessions").select(`
-        id, completed, final_balance, total_spending, total_revenue,
-        user_feedback (political_affiliation)
-      `)
-
-    if (sessionsError) throw sessionsError
-
-    const totalSessions = sessions?.length || 0
-    const completedSessions = sessions?.filter((s) => s.completed).length || 0
-
-    // Calculate average balance from completed sessions
-    const completedSessionsData = sessions?.filter((s) => s.completed && s.final_balance !== null) || []
-
-    const partyStats: Record<string, { count: number; totalDeficit: number }> = {}
-
-    completedSessionsData.forEach((session) => {
-      const party = session.user_feedback?.[0]?.political_affiliation || "unknown"
-      if (!partyStats[party]) partyStats[party] = { count: 0, totalDeficit: 0 }
-
-      partyStats[party].count++
-      // If final_balance is negative (deficit), it's a negative number.
-      // We want average balance, so we just sum the raw balance.
-      partyStats[party].totalDeficit += Number(session.final_balance)
-    })
-
-    const avgDeficitByParty: Record<string, number> = {}
-    Object.entries(partyStats).forEach(([party, stats]) => {
-      if (stats.count > 0) {
-        avgDeficitByParty[party] = Math.round(stats.totalDeficit / stats.count)
-      }
-    })
-
-    const averageBalance =
-      completedSessionsData.length > 0
-        ? completedSessionsData.reduce((sum, s) => sum + Number(s.final_balance), 0) / completedSessionsData.length
-        : 0
-
-    // Categorize budget approaches
-    let spendingFocused = 0
-    let revenueFocused = 0
-    let balanced = 0
-
-    completedSessionsData.forEach((session) => {
-      const spending = Number(session.total_spending) || 0
-      const revenue = Number(session.total_revenue) || 0
-      const spendingChange = Math.abs(spending - 4708) // baseline spending
-      const revenueChange = Math.abs(revenue - 4975) // baseline revenue
-
-      if (spendingChange > revenueChange * 1.5) {
-        spendingFocused++
-      } else if (revenueChange > spendingChange * 1.5) {
-        revenueFocused++
-      } else {
-        balanced++
-      }
-    })
-
-    // Get popular policy choices from budget_configs
-    const { data: configs, error: configsError } = await supabase
-      .from("budget_configs")
-      .select("session_id, category, value")
-      .in(
-        "session_id",
-        completedSessionsData.map((s) => s.id),
-      )
-
-    if (configsError) throw configsError
-
-    // Define baseline values for comparison
-    const baselines: Record<string, number> = {
-      defense: 816,
-      healthcare: 1355,
-      social_security: 1347,
-      education: 80,
-      infrastructure: 65,
-      energy: 45,
-      income_tax: 2044,
-      corporate_tax: 420,
-      payroll_tax: 1614,
-    }
-
-    // Count policy choices (changes from baseline)
-    const policyChanges: Record<string, { increased: number; decreased: number; total: number }> = {}
-
-    configs?.forEach((config) => {
-      const baseline = baselines[config.category] || 0
-      const value = Number(config.value)
-      const change = value - baseline
-
-      if (!policyChanges[config.category]) {
-        policyChanges[config.category] = { increased: 0, decreased: 0, total: 0 }
-      }
-
-      policyChanges[config.category].total++
-
-      if (Math.abs(change) > 5) {
-        // Only count significant changes
-        if (change > 0) {
-          policyChanges[config.category].increased++
-        } else if (change < 0) {
-          policyChanges[config.category].decreased++
-        }
-      }
-    })
-
-    // Create popular policies array
-    const popularPolicies = Object.entries(policyChanges)
-      .map(([category, counts]) => {
-        const supportCount = Math.max(counts.increased, counts.decreased)
-        const action = counts.decreased > counts.increased ? "Cuts" : "Increase"
-        const categoryName = category
-          .split("_")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ")
-
-        return {
-          policy_name: `${categoryName} ${action}`,
-          support_count: supportCount,
-          total_count: completedSessions,
-          popularity_percentage: completedSessions > 0 ? Math.round((supportCount / completedSessions) * 100) : 0,
-        }
-      })
-      .sort((a, b) => b.popularity_percentage - a.popularity_percentage)
-      .slice(0, 10)
-
-    return {
-      totalSessions,
-      completedSessions,
-      averageBalance: Math.round(averageBalance * 100) / 100,
-      spendingVsRevenue: {
-        spending_focused: spendingFocused,
-        revenue_focused: revenueFocused,
-        balanced: balanced,
-      },
-      popularPolicies,
-      partisanBreakdown: {
-        conservative: partyStats["conservative"]?.count || 0,
-        moderate: partyStats["moderate"]?.count || 0,
-        liberal: partyStats["liberal"]?.count || 0,
-        progressive: partyStats["progressive"]?.count || 0,
-        avg_deficit_by_party: avgDeficitByParty,
-      },
-    }
+    const data = await response.json()
+    return data
   } catch (error) {
     console.error("Failed to get budget analytics:", error)
     // Return empty analytics on error

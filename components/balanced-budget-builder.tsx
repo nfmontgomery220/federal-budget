@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Target,
 } from "lucide-react"
+import { createBudgetSession, saveBudgetConfig, completeSession, trackInteraction } from "@/lib/budget-analytics"
 
 interface BudgetItem {
   id: string
@@ -241,6 +242,21 @@ const initialBudgetItems: BudgetItem[] = [
 export default function BalancedBudgetBuilder() {
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>(initialBudgetItems)
   const [showResults, setShowResults] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        const id = await createBudgetSession()
+        setSessionId(id)
+        console.log("[v0] Budget session created:", id)
+      } catch (error) {
+        console.error("[v0] Error creating session:", error)
+      }
+    }
+    initSession()
+  }, [])
 
   const totalSpending = budgetItems
     .filter((item) => item.category === "spending")
@@ -258,12 +274,81 @@ export default function BalancedBudgetBuilder() {
 
   const updateBudgetItem = (id: string, newValue: number) => {
     setBudgetItems((prev) => prev.map((item) => (item.id === id ? { ...item, current: newValue } : item)))
+
+    if (sessionId) {
+      trackInteraction(sessionId, "slider_change", {
+        itemId: id,
+        newValue,
+        timestamp: new Date().toISOString(),
+      }).catch(console.error)
+    }
+  }
+
+  const saveCurrentBudget = async () => {
+    if (!sessionId) return
+
+    setIsLoading(true)
+    try {
+      const spendingBreakdown: Record<string, number> = {}
+      const revenueBreakdown: Record<string, number> = {}
+
+      budgetItems.forEach((item) => {
+        if (item.category === "spending") {
+          spendingBreakdown[item.id] = item.current
+        } else {
+          revenueBreakdown[item.id] = item.current
+        }
+      })
+
+      // Determine approach based on changes
+      let approach = "mixed"
+      const spendingChanges = budgetItems
+        .filter((item) => item.category === "spending")
+        .reduce((sum, item) => sum + Math.abs(item.current - item.baseline), 0)
+      const revenueChanges = budgetItems
+        .filter((item) => item.category === "revenue")
+        .reduce((sum, item) => sum + Math.abs(item.current - item.baseline), 0)
+
+      if (spendingChanges > revenueChanges * 2) {
+        approach = "spending_cuts"
+      } else if (revenueChanges > spendingChanges * 2) {
+        approach = "revenue_increases"
+      }
+
+      await saveBudgetConfig(sessionId, {
+        totalSpending,
+        totalRevenue,
+        deficit,
+        spendingBreakdown,
+        revenueBreakdown,
+        approach,
+      })
+
+      await completeSession(sessionId)
+
+      alert("Your budget has been saved! Thank you for participating.")
+      console.log("[v0] Budget saved successfully")
+    } catch (error) {
+      console.error("[v0] Error saving budget:", error)
+      alert("There was an error saving your budget. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const resetToBaseline = () => {
     setBudgetItems((prev) => prev.map((item) => ({ ...item, current: item.baseline })))
     setShowResults(false)
+
+    if (sessionId) {
+      trackInteraction(sessionId, "reset", {
+        timestamp: new Date().toISOString(),
+      }).catch(console.error)
+    }
   }
+
+  const spendingItems = budgetItems.filter((item) => item.category === "spending")
+  const revenueItems = budgetItems.filter((item) => item.category === "revenue")
 
   const getDeficitColor = () => {
     if (deficit <= 0) return "text-green-600"
@@ -276,9 +361,6 @@ export default function BalancedBudgetBuilder() {
     if (deficit < 1000) return "bg-yellow-100 text-yellow-800"
     return "bg-red-100 text-red-800"
   }
-
-  const spendingItems = budgetItems.filter((item) => item.category === "spending")
-  const revenueItems = budgetItems.filter((item) => item.category === "revenue")
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -335,6 +417,9 @@ export default function BalancedBudgetBuilder() {
             </Button>
             <Button onClick={resetToBaseline} variant="outline">
               Reset to Baseline
+            </Button>
+            <Button onClick={saveCurrentBudget} disabled={isLoading || !sessionId}>
+              {isLoading ? "Saving..." : "Save Scenario"}
             </Button>
           </div>
         </CardContent>

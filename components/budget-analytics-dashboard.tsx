@@ -32,16 +32,7 @@ export default function BudgetAnalyticsDashboard() {
   const handleExport = async () => {
     setIsExporting(true)
     try {
-      const csv = await exportBudgetSessionData()
-      const blob = new Blob([csv], { type: "text/csv" })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `budget-data-${new Date().toISOString().split("T")[0]}.csv`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      await exportBudgetSessionData()
     } catch (error) {
       console.error("Export failed:", error)
     } finally {
