@@ -19,12 +19,14 @@ import {
   Activity,
   AlertTriangle,
   ArrowLeft,
+  Phone,
 } from "lucide-react"
 
 // Import components from the components directory
 import BalancedBudgetBuilder from "../components/balanced-budget-builder"
 import BudgetAnalyticsDashboard from "../components/budget-analytics-dashboard"
 import RevenueBreakdown from "../components/revenue-breakdown"
+import ContactCongressTool from "../components/contact-congress-tool"
 
 // Import other tools from root directory
 import TaxDesignCalculator from "../tax-design-calculator"
@@ -55,6 +57,7 @@ type ActiveTool =
   | "ss-solutions"
   | "full-proposal"
   | "legislative-updates"
+  | "contact-congress"
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState<ActiveTool>("dashboard")
@@ -89,6 +92,8 @@ export default function HomePage() {
         return <FullProposalGenerator />
       case "legislative-updates":
         return <LegislativeUpdateSystem />
+      case "contact-congress":
+        return <ContactCongressTool />
       default:
         return <DashboardHome setActiveView={setActiveView} />
     }
@@ -237,6 +242,25 @@ function DashboardHome({ setActiveView }: { setActiveView: (view: ActiveTool) =>
             <CardContent>
               <Button className="w-full bg-gray-800 hover:bg-gray-900" onClick={() => setActiveView("income-impact")}>
                 Analyze Income Impact
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Contact Congress */}
+          <Card className="border-purple-200 bg-purple-50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Phone className="h-5 w-5 text-purple-600" />
+                <CardTitle className="text-purple-900">Contact Congress</CardTitle>
+              </div>
+              <CardDescription>Share your budget priorities directly with your representatives</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                className="w-full bg-purple-600 hover:bg-purple-700"
+                onClick={() => setActiveView("contact-congress")}
+              >
+                Contact Your Reps
               </Button>
             </CardContent>
           </Card>

@@ -51,6 +51,11 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        // Disable deprecated v2 color names
+        warmGray: undefined,
+        trueGray: undefined,
+        coolGray: undefined,
+        blueGray: undefined,
       },
       borderRadius: {
         lg: "var(--radius)",
