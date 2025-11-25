@@ -9,85 +9,55 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Use Google Civic Information API (free for basic lookups)
-    const apiKey = process.env.GOOGLE_CIVIC_API_KEY || ""
-    const address = `${zip}, USA`
+    const url = `https://whoismyrepresentative.com/getall_mems.php?zip=${zip}&output=json`
 
-    // API works without key but has rate limits; add key for production
-    const url = apiKey
-      ? `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(address)}&levels=country&roles=legislatorUpperBody&roles=legislatorLowerBody&key=${apiKey}`
-      : `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(address)}&levels=country&roles=legislatorUpperBody&roles=legislatorLowerBody`
-
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "FiscalClarity/1.0",
+      },
+    })
 
     if (!response.ok) {
-      console.error("[v0] Google Civic API error:", response.status, await response.text())
-      // Fallback to simplified lookup if API fails
-      return getFallbackRepresentatives(zip)
+      console.error("[v0] whoismyrepresentative.com API error:", response.status)
+      return NextResponse.json({ error: "Unable to fetch representatives", representatives: [] }, { status: 500 })
     }
 
     const data = await response.json()
-    const representatives = parseGoogleCivicResponse(data)
+
+    // Parse the response from whoismyrepresentative.com
+    const representatives = parseWhoIsMyRepResponse(data)
 
     return NextResponse.json({ representatives })
   } catch (error) {
     console.error("[v0] Error fetching representatives:", error)
-    return getFallbackRepresentatives(zip)
+    return NextResponse.json({ error: "Service temporarily unavailable", representatives: [] }, { status: 500 })
   }
 }
 
-function parseGoogleCivicResponse(data: any) {
+function parseWhoIsMyRepResponse(data: any) {
   const reps: any[] = []
 
-  if (!data.offices || !data.officials) {
+  if (!data.results || !Array.isArray(data.results)) {
     return reps
   }
 
-  for (const office of data.offices) {
-    const officeName = office.name.toLowerCase()
-    let chamber: "House" | "Senate" | null = null
+  for (const member of data.results) {
+    // Determine chamber based on the response
+    const chamber = member.office?.toLowerCase().includes("senator") ? "Senate" : "House"
 
-    if (officeName.includes("senate") || officeName.includes("senator")) {
-      chamber = "Senate"
-    } else if (officeName.includes("house") || officeName.includes("representative")) {
-      chamber = "House"
-    }
-
-    if (!chamber) continue
-
-    for (const index of office.officialIndices || []) {
-      const official = data.officials[index]
-      if (!official) continue
-
-      const phone = official.phones?.[0] || ""
-      const website = official.urls?.[0] || ""
-      const email = official.emails?.[0] || ""
-
-      reps.push({
-        id: `${chamber.toLowerCase()}-${official.name.replace(/\s+/g, "-")}`,
-        name: official.name,
-        party: official.party || "Unknown",
-        chamber,
-        state: "", // Google API doesn't always provide state explicitly
-        district: chamber === "House" ? office.name.match(/\d+/)?.[0] || "" : undefined,
-        phone,
-        email,
-        website,
-        photoUrl: official.photoUrl,
-      })
-    }
+    reps.push({
+      id: `${chamber.toLowerCase()}-${member.name?.replace(/\s+/g, "-").toLowerCase() || "unknown"}`,
+      name: member.name || "Unknown",
+      party: member.party || "Unknown",
+      chamber,
+      state: member.state || "",
+      district: member.district || (chamber === "House" ? member.district : undefined),
+      phone: member.phone || "",
+      email: "", // whoismyrepresentative.com doesn't provide emails
+      website: member.link || "",
+      photoUrl: "", // No photo URLs from this API
+    })
   }
 
   return reps
-}
-
-// Fallback when API is unavailable or rate limited
-function getFallbackRepresentatives(zip: string) {
-  console.log("[v0] Using fallback representative lookup for ZIP:", zip)
-
-  return NextResponse.json({
-    representatives: [],
-    error: "Unable to lookup representatives at this time. Please try again later.",
-    fallback: true,
-  })
 }
