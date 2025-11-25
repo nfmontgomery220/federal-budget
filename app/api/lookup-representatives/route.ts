@@ -8,70 +8,86 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid ZIP code" }, { status: 400 })
   }
 
-  // Use Civic Information API (free, no API key required for basic lookups)
-  // In production, you would use a more robust solution like:
-  // - Google Civic Information API
-  // - OpenStates API
-  // - congress.gov scraping
+  try {
+    // Use Google Civic Information API (free for basic lookups)
+    const apiKey = process.env.GOOGLE_CIVIC_API_KEY || ""
+    const address = `${zip}, USA`
 
-  // For now, return mock data based on ZIP code
-  // This should be replaced with actual API integration
-  const mockRepresentatives = generateMockReps(zip)
+    // API works without key but has rate limits; add key for production
+    const url = apiKey
+      ? `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(address)}&levels=country&roles=legislatorUpperBody&roles=legislatorLowerBody&key=${apiKey}`
+      : `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(address)}&levels=country&roles=legislatorUpperBody&roles=legislatorLowerBody`
 
-  return NextResponse.json({ representatives: mockRepresentatives })
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      console.error("[v0] Google Civic API error:", response.status, await response.text())
+      // Fallback to simplified lookup if API fails
+      return getFallbackRepresentatives(zip)
+    }
+
+    const data = await response.json()
+    const representatives = parseGoogleCivicResponse(data)
+
+    return NextResponse.json({ representatives })
+  } catch (error) {
+    console.error("[v0] Error fetching representatives:", error)
+    return getFallbackRepresentatives(zip)
+  }
 }
 
-function generateMockReps(zip: string): any[] {
-  // Extract state from ZIP (simplified)
-  const zipNum = Number.parseInt(zip)
-  let state = "Unknown"
-  let district = "1"
+function parseGoogleCivicResponse(data: any) {
+  const reps: any[] = []
 
-  if (zipNum >= 10000 && zipNum < 20000) {
-    state = "NY"
-    district = Math.floor((zipNum - 10000) / 1000).toString()
-  } else if (zipNum >= 90000) {
-    state = "CA"
-    district = Math.floor((zipNum - 90000) / 1000).toString()
-  } else if (zipNum >= 60000 && zipNum < 70000) {
-    state = "IL"
-    district = Math.floor((zipNum - 60000) / 1000).toString()
-  } else {
-    state = "VA"
-    district = "8"
+  if (!data.offices || !data.officials) {
+    return reps
   }
 
-  return [
-    {
-      id: `house-${state}-${district}`,
-      name: `Rep. John Smith`,
-      party: "Democrat",
-      chamber: "House" as const,
-      state,
-      district,
-      phone: "(202) 225-1234",
-      email: "representative@mail.house.gov",
-      website: `https://smith.house.gov`,
-    },
-    {
-      id: `senate-${state}-1`,
-      name: `Sen. Jane Doe`,
-      party: "Republican",
-      chamber: "Senate" as const,
-      state,
-      phone: "(202) 224-5678",
-      email: "senator_doe@senate.gov",
-      website: `https://doe.senate.gov`,
-    },
-    {
-      id: `senate-${state}-2`,
-      name: `Sen. Bob Johnson`,
-      party: "Democrat",
-      chamber: "Senate" as const,
-      state,
-      phone: "(202) 224-9012",
-      email: "senator_johnson@senate.gov",
-      website: `https://johnson.senate.gov`,
-    },
-  ]
+  for (const office of data.offices) {
+    const officeName = office.name.toLowerCase()
+    let chamber: "House" | "Senate" | null = null
+
+    if (officeName.includes("senate") || officeName.includes("senator")) {
+      chamber = "Senate"
+    } else if (officeName.includes("house") || officeName.includes("representative")) {
+      chamber = "House"
+    }
+
+    if (!chamber) continue
+
+    for (const index of office.officialIndices || []) {
+      const official = data.officials[index]
+      if (!official) continue
+
+      const phone = official.phones?.[0] || ""
+      const website = official.urls?.[0] || ""
+      const email = official.emails?.[0] || ""
+
+      reps.push({
+        id: `${chamber.toLowerCase()}-${official.name.replace(/\s+/g, "-")}`,
+        name: official.name,
+        party: official.party || "Unknown",
+        chamber,
+        state: "", // Google API doesn't always provide state explicitly
+        district: chamber === "House" ? office.name.match(/\d+/)?.[0] || "" : undefined,
+        phone,
+        email,
+        website,
+        photoUrl: official.photoUrl,
+      })
+    }
+  }
+
+  return reps
+}
+
+// Fallback when API is unavailable or rate limited
+function getFallbackRepresentatives(zip: string) {
+  console.log("[v0] Using fallback representative lookup for ZIP:", zip)
+
+  return NextResponse.json({
+    representatives: [],
+    error: "Unable to lookup representatives at this time. Please try again later.",
+    fallback: true,
+  })
 }
