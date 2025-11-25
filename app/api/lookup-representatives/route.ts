@@ -12,44 +12,69 @@ export async function GET(request: Request) {
 
   try {
     if (googleApiKey) {
+      console.log("[v0] Attempting Google Civic API lookup for ZIP:", zip)
+
       try {
         const googleUrl = `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(zip + ", USA")}&levels=country&roles=legislatorUpperBody&roles=legislatorLowerBody&key=${googleApiKey}`
 
-        const googleResponse = await fetch(googleUrl)
+        const googleResponse = await fetch(googleUrl, {
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        })
 
         if (googleResponse.ok) {
           const data = await googleResponse.json()
           const representatives = parseGoogleCivicResponse(data)
-          return NextResponse.json({ representatives })
+          console.log("[v0] ✓ Google Civic API SUCCESS - Found", representatives.length, "representatives")
+          console.log("[v0] Representatives:", representatives.map((r) => `${r.name} (${r.chamber})`).join(", "))
+
+          return NextResponse.json({
+            representatives,
+            source: "Google Civic Information API",
+            timestamp: new Date().toISOString(),
+          })
         } else {
-          // Consume the error response to prevent hanging
           const errorData = await googleResponse.json().catch(() => ({}))
-          console.log("[v0] Google Civic API not available, falling back to free API:", googleResponse.status)
+          console.log("[v0] ✗ Google Civic API failed with status:", googleResponse.status)
+          console.log("[v0] Error details:", errorData.error?.message || "Unknown error")
         }
       } catch (googleError) {
-        console.log("[v0] Google Civic API error, falling back to free API")
+        console.log("[v0] ✗ Google Civic API exception:", googleError)
       }
+    } else {
+      console.log("[v0] No Google API key configured, using fallback API")
     }
+
+    console.log("[v0] Falling back to whoismyrepresentative.com API for ZIP:", zip)
 
     const url = `https://whoismyrepresentative.com/getall_mems.php?zip=${zip}&output=json`
 
     const response = await fetch(url, {
       headers: {
         "User-Agent": "FiscalClarity/1.0",
+        "Cache-Control": "no-cache",
       },
     })
 
     if (!response.ok) {
-      console.error("[v0] whoismyrepresentative.com API error:", response.status)
+      console.error("[v0] ✗ whoismyrepresentative.com API error:", response.status)
       return NextResponse.json({ error: "Unable to fetch representatives", representatives: [] }, { status: 500 })
     }
 
     const data = await response.json()
     const representatives = parseWhoIsMyRepResponse(data)
 
-    return NextResponse.json({ representatives })
+    console.log("[v0] ✓ Fallback API SUCCESS - Found", representatives.length, "representatives")
+    console.log("[v0] Representatives:", representatives.map((r) => `${r.name} (${r.chamber})`).join(", "))
+
+    return NextResponse.json({
+      representatives,
+      source: "whoismyrepresentative.com (Fallback - May have outdated data)",
+      timestamp: new Date().toISOString(),
+    })
   } catch (error) {
-    console.error("[v0] Error fetching representatives:", error)
+    console.error("[v0] ✗ Unexpected error fetching representatives:", error)
     return NextResponse.json({ error: "Service temporarily unavailable", representatives: [] }, { status: 500 })
   }
 }
