@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -61,6 +61,25 @@ type ActiveTool =
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState<ActiveTool>("dashboard")
+  const [budgetDataForCongress, setBudgetDataForCongress] = useState<any>(null)
+
+  useEffect(() => {
+    if (window.location.hash === "#contact-congress") {
+      const storedData = sessionStorage.getItem("budgetProposalForCongress")
+      if (storedData) {
+        try {
+          const budgetData = JSON.parse(storedData)
+          setBudgetDataForCongress(budgetData)
+          setActiveView("contact-congress")
+          sessionStorage.removeItem("budgetProposalForCongress")
+        } catch (error) {
+          console.error("[v0] Failed to parse budget data:", error)
+        }
+      } else {
+        setActiveView("contact-congress")
+      }
+    }
+  }, [])
 
   const renderActiveView = () => {
     switch (activeView) {
@@ -93,7 +112,7 @@ export default function HomePage() {
       case "legislative-updates":
         return <LegislativeUpdateSystem />
       case "contact-congress":
-        return <ContactCongressTool />
+        return <ContactCongressTool preloadedBudgetData={budgetDataForCongress} />
       default:
         return <DashboardHome setActiveView={setActiveView} />
     }
@@ -103,7 +122,15 @@ export default function HomePage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white border-b px-6 py-4">
-          <Button variant="outline" onClick={() => setActiveView("dashboard")} className="mb-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setBudgetDataForCongress(null)
+              window.location.hash = ""
+              setActiveView("dashboard")
+            }}
+            className="mb-2"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>

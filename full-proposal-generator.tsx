@@ -12,7 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, Download, FileText, Calculator, TrendingUp, Users, AlertTriangle, CheckCircle } from "lucide-react"
+import {
+  ArrowLeft,
+  Download,
+  FileText,
+  Calculator,
+  TrendingUp,
+  Users,
+  AlertTriangle,
+  CheckCircle,
+  Send,
+} from "lucide-react"
 
 function DebouncedInput({
   value: initialValue,
@@ -748,6 +758,34 @@ export default function FullProposalGenerator() {
               Back to Generator
             </Button>
             <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  // Store proposal data in sessionStorage for Contact Congress to read
+                  const budgetData = {
+                    title: generatedProposal.title,
+                    summary: generatedProposal.summary,
+                    spending: generatedProposal.spendingChanges.map((item) => ({
+                      category: item.category,
+                      change: item.change,
+                      amount: item.change, // Assuming item.change represents the monetary change
+                    })),
+                    revenue: generatedProposal.revenueChanges.map((item) => ({
+                      source: item.name || item.id, // Use name or id as source
+                      change: item.proposedRevenue - item.currentRevenue,
+                      amount: item.proposedRevenue,
+                    })),
+                    deficit: generatedProposal.fiscalImpact.deficit,
+                  }
+                  sessionStorage.setItem("budgetProposalForCongress", JSON.stringify(budgetData))
+                  // Navigate to Contact Congress section
+                  window.location.hash = "#contact-congress"
+                  window.scrollTo({ top: 0, behavior: "smooth" })
+                }}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Send className="h-4 w-4" />
+                Send to Congress
+              </Button>
               <Button onClick={exportProposal} className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
                 Export Proposal

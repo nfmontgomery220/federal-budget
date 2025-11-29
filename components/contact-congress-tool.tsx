@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,9 @@ interface Representative {
   phone: string
   email: string
   website: string
+  officeAddress?: string
+  contactForm?: string
+  dataSource?: string
 }
 
 interface ContactStats {
@@ -30,8 +33,10 @@ interface ContactStats {
   growthRate: number
 }
 
-export default function ContactCongressTool() {
+export default function ContactCongressTool({ preloadedBudgetData }: { preloadedBudgetData?: any }) {
   const [zipCode, setZipCode] = useState("")
+  const [streetAddress, setStreetAddress] = useState("")
+  const [showAddressPrompt, setShowAddressPrompt] = useState(false)
   const [representatives, setRepresentatives] = useState<Representative[]>([])
   const [selectedReps, setSelectedReps] = useState<Set<string>>(new Set())
   const [budgetSummary, setBudgetSummary] = useState("")
@@ -40,6 +45,31 @@ export default function ContactCongressTool() {
   const [copied, setCopied] = useState(false)
   const [contactStats, setContactStats] = useState<ContactStats | null>(null)
 
+  useEffect(() => {
+    if (preloadedBudgetData) {
+      const formattedBudget = formatPreloadedBudget(preloadedBudgetData)
+      setBudgetSummary(formattedBudget)
+    }
+  }, [preloadedBudgetData])
+
+  const formatPreloadedBudget = (data: any) => {
+    if (!data) return ""
+
+    let summary = `${data.title}\n\n`
+    summary += `${data.summary}\n\n`
+    summary += `SPENDING CHANGES:\n`
+    data.spending.forEach((item) => {
+      summary += `- ${item.category}: ${item.change > 0 ? "+" : ""}$${Math.abs(item.change)}B (${item.change > 0 ? "increase" : "cut"})\n`
+    })
+    summary += `\nREVENUE CHANGES:\n`
+    data.revenue.forEach((item) => {
+      summary += `- ${item.source}: ${item.change > 0 ? "+" : ""}$${Math.abs(item.change)}B\n`
+    })
+    summary += `\nNET FISCAL IMPACT: ${data.deficit >= 0 ? "Surplus" : "Deficit"} of $${Math.abs(data.deficit).toFixed(1)}B\n`
+
+    return summary
+  }
+
   const lookupRepresentatives = async () => {
     if (!zipCode || zipCode.length !== 5) {
       return
@@ -47,8 +77,14 @@ export default function ContactCongressTool() {
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/lookup-representatives?zip=${zipCode}`)
+      const address = streetAddress ? `${streetAddress}, ${zipCode}` : zipCode
+      const response = await fetch(`/api/lookup-representatives?zip=${zipCode}&address=${encodeURIComponent(address)}`)
       const data = await response.json()
+
+      if (data.multipleDistricts && !streetAddress) {
+        setShowAddressPrompt(true)
+      }
+
       setRepresentatives(data.representatives || [])
     } catch (error) {
       console.error("[v0] Failed to lookup representatives:", error)
@@ -68,12 +104,14 @@ export default function ContactCongressTool() {
   }
 
   const generateEmailContent = () => {
-    const selectedRepNames = representatives
-      .filter((rep) => selectedReps.has(rep.id))
-      .map((rep) => rep.name)
-      .join(", ")
+    const selectedRepList = representatives.filter((rep) => selectedReps.has(rep.id))
 
-    return `Dear ${selectedRepNames},
+    const officeGreeting =
+      selectedRepList.length === 1
+        ? `Dear Representative (${selectedRepList[0].chamber} Office, ${selectedRepList[0].state}${selectedRepList[0].district ? `-${selectedRepList[0].district}` : ""})`
+        : `Dear Congressional Representatives`
+
+    return `${officeGreeting},
 
 I am writing to share my analysis of the federal budget and urge action on fiscal responsibility.
 
@@ -89,7 +127,7 @@ Thank you for your service.
 
 Sincerely,
 [Your Name]
-[City, State, ZIP]`
+[City, State, ZIP: ${zipCode}]`
   }
 
   const copyEmailContent = () => {
@@ -101,7 +139,6 @@ Sincerely,
   const sendEmail = async () => {
     const selectedRepList = representatives.filter((rep) => selectedReps.has(rep.id))
 
-    // Track the contact event
     await fetch("/api/track-congress-contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -112,7 +149,6 @@ Sincerely,
       }),
     })
 
-    // Create mailto link
     const emails = selectedRepList.map((rep) => rep.email).join(",")
     const subject = encodeURIComponent("Constituent Feedback on Federal Budget Priorities")
     const body = encodeURIComponent(generateEmailContent())
@@ -137,6 +173,14 @@ Sincerely,
           Share your budget priorities directly with your members of Congress. Let them know how you would solve the
           fiscal crisis.
         </p>
+        {preloadedBudgetData && (
+          <Alert className="mt-4 bg-green-50 border-green-200">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-900">
+              <strong>Budget Loaded:</strong> Your proposal "{preloadedBudgetData.title}" is ready to send
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       <Tabs defaultValue="contact" className="space-y-6" onValueChange={(val) => val === "stats" && loadStats()}>
@@ -146,19 +190,21 @@ Sincerely,
         </TabsList>
 
         <TabsContent value="contact" className="space-y-6">
-          {/* Step 1: Find Representatives */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-blue-600" />
                 Step 1: Find Your Representatives
               </CardTitle>
-              <CardDescription>Enter your ZIP code to find your House Representative and Senators</CardDescription>
+              <CardDescription>
+                Enter your ZIP code to find your representatives. For more accurate results, include your street
+                address.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <Label htmlFor="zipCode">ZIP Code</Label>
+                  <Label htmlFor="zipCode">ZIP Code *</Label>
                   <Input
                     id="zipCode"
                     placeholder="12345"
@@ -174,6 +220,30 @@ Sincerely,
                   </Button>
                 </div>
               </div>
+
+              {showAddressPrompt && (
+                <Alert className="bg-yellow-50 border-yellow-200">
+                  <MapPin className="h-4 w-4 text-yellow-600" />
+                  <AlertDescription className="text-yellow-900">
+                    <strong>Multiple Districts Found:</strong> Your ZIP code spans multiple congressional districts. For
+                    accurate results, please enter your street address below.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {(showAddressPrompt || streetAddress) && (
+                <div>
+                  <Label htmlFor="streetAddress">Street Address (Optional - for better accuracy)</Label>
+                  <Input
+                    id="streetAddress"
+                    placeholder="123 Main Street"
+                    value={streetAddress}
+                    onChange={(e) => setStreetAddress(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && lookupRepresentatives()}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Your address is used only for lookup and is not stored</p>
+                </div>
+              )}
 
               {representatives.length > 0 && (
                 <div className="space-y-3 mt-6">
@@ -203,20 +273,44 @@ Sincerely,
                                 {rep.party}
                               </Badge>
                               <Badge variant="outline">{rep.chamber}</Badge>
+                              {rep.dataSource && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {rep.dataSource === "google" ? "✓ Google API" : "Fallback API"}
+                                </Badge>
+                              )}
                             </div>
                             <div className="text-sm text-gray-600 space-y-1">
                               <div className="flex items-center gap-2">
                                 <Building2 className="h-4 w-4" />
-                                {rep.state} {rep.district ? `- District ${rep.district}` : ""}
+                                <strong>Office:</strong> {rep.state} {rep.district ? `- District ${rep.district}` : ""}
                               </div>
+                              {rep.officeAddress && (
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4" />
+                                  <strong>Office Address:</strong> {rep.officeAddress}
+                                </div>
+                              )}
                               <div className="flex items-center gap-2">
                                 <Phone className="h-4 w-4" />
-                                {rep.phone}
+                                <strong>Office Phone:</strong> {rep.phone}
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4" />
-                                {rep.email}
-                              </div>
+                              {rep.contactForm ? (
+                                <a
+                                  href={rep.contactForm}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 text-blue-600 hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Mail className="h-4 w-4" />
+                                  <strong>Use Official Contact Form (Recommended)</strong>
+                                </a>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Mail className="h-4 w-4" />
+                                  {rep.email}
+                                </div>
+                              )}
                               <a
                                 href={rep.website}
                                 target="_blank"
@@ -239,7 +333,6 @@ Sincerely,
             </CardContent>
           </Card>
 
-          {/* Step 2: Compose Message */}
           {selectedReps.size > 0 && (
             <Card>
               <CardHeader>
@@ -287,7 +380,6 @@ Sincerely,
             </Card>
           )}
 
-          {/* Step 3: Send */}
           {selectedReps.size > 0 && budgetSummary && (
             <Card>
               <CardHeader>
@@ -337,7 +429,6 @@ Sincerely,
         </TabsContent>
 
         <TabsContent value="stats" className="space-y-6">
-          {/* Impact Statistics */}
           <div className="grid md:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
@@ -364,7 +455,6 @@ Sincerely,
             </Card>
           </div>
 
-          {/* Most Active Districts */}
           <Card>
             <CardHeader>
               <CardTitle>Most Engaged Districts</CardTitle>
@@ -393,7 +483,6 @@ Sincerely,
             </CardContent>
           </Card>
 
-          {/* Call to Action */}
           <Alert className="bg-green-50 border-green-200">
             <Users className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-900">

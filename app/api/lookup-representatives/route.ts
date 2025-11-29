@@ -3,19 +3,21 @@ import { NextResponse } from "next/server"
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const zip = searchParams.get("zip")
+  const address = searchParams.get("address")
 
   if (!zip || zip.length !== 5) {
     return NextResponse.json({ error: "Invalid ZIP code" }, { status: 400 })
   }
 
   const googleApiKey = process.env.Google_Civic_api_key
+  const lookupAddress = address || zip
 
   try {
     if (googleApiKey) {
-      console.log("[v0] Attempting Google Civic API lookup for ZIP:", zip)
+      console.log("[v0] Attempting Google Civic API lookup for:", lookupAddress)
 
       try {
-        const googleUrl = `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(zip + ", USA")}&levels=country&roles=legislatorUpperBody&roles=legislatorLowerBody&key=${googleApiKey}`
+        const googleUrl = `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(lookupAddress)}&key=${googleApiKey}`
 
         const googleResponse = await fetch(googleUrl, {
           headers: {
@@ -33,6 +35,7 @@ export async function GET(request: Request) {
             representatives,
             source: "Google Civic Information API",
             timestamp: new Date().toISOString(),
+            multipleDistricts: !address && representatives.length > 3,
           })
         } else {
           const errorData = await googleResponse.json().catch(() => ({}))
@@ -72,6 +75,7 @@ export async function GET(request: Request) {
       representatives,
       source: "whoismyrepresentative.com (Fallback - May have outdated data)",
       timestamp: new Date().toISOString(),
+      multipleDistricts: false,
     })
   } catch (error) {
     console.error("[v0] ✗ Unexpected error fetching representatives:", error)
@@ -98,6 +102,10 @@ function parseGoogleCivicResponse(data: any) {
       const official = data.officials[officialIndex]
       if (!official) continue
 
+      const officeAddress = official.address?.[0]
+        ? `${official.address[0].line1 || ""}, ${official.address[0].city || ""}, ${official.address[0].state || ""} ${official.address[0].zip || ""}`.trim()
+        : undefined
+
       reps.push({
         id: `${chamber.toLowerCase()}-${official.name?.replace(/\s+/g, "-").toLowerCase() || "unknown"}`,
         name: official.name || "Unknown",
@@ -109,6 +117,9 @@ function parseGoogleCivicResponse(data: any) {
         email: official.emails?.[0] || "",
         website: official.urls?.[0] || "",
         photoUrl: official.photoUrl || "",
+        officeAddress,
+        contactForm: official.urls?.[0] ? `${official.urls[0]}/contact` : undefined,
+        dataSource: "google",
       })
     }
   }
@@ -137,6 +148,9 @@ function parseWhoIsMyRepResponse(data: any) {
       email: "",
       website: member.link || "",
       photoUrl: "",
+      officeAddress: undefined,
+      contactForm: member.link ? `${member.link}/contact` : undefined,
+      dataSource: "fallback",
     })
   }
 
