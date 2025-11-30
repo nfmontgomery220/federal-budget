@@ -34,6 +34,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to complete session" }, { status: 500 })
     }
 
+    try {
+      const analysisResponse = await fetch(`${request.url.split("/api")[0]}/api/analyze-budget-consensus`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      })
+
+      if (!analysisResponse.ok) {
+        console.error("[v0] Consensus analysis failed, but session was completed")
+      } else {
+        console.log("[v0] Consensus analysis completed successfully")
+      }
+    } catch (analysisError) {
+      console.error("[v0] Error triggering consensus analysis:", analysisError)
+      // Don't fail the request if consensus analysis fails
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error in complete-budget-session:", error)

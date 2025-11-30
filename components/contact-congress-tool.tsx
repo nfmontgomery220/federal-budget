@@ -236,10 +236,12 @@ Sincerely,
                   <Label htmlFor="streetAddress">Street Address (Optional - for better accuracy)</Label>
                   <Input
                     id="streetAddress"
-                    placeholder="123 Main Street"
+                    placeholder="123 Main Street, City, State"
                     value={streetAddress}
                     onChange={(e) => setStreetAddress(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && lookupRepresentatives()}
+                    maxLength={120}
+                    className="w-full"
                   />
                   <p className="text-xs text-gray-500 mt-1">Your address is used only for lookup and is not stored</p>
                 </div>

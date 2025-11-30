@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       console.log("[v0] Attempting Google Civic API lookup for:", lookupAddress)
 
       try {
-        const googleUrl = `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(lookupAddress)}&key=${googleApiKey}`
+        const googleUrl = `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(lookupAddress)}&includeOffices=true&levels=country&roles=legislatorLowerBody&roles=legislatorUpperBody&key=${googleApiKey}`
 
         const googleResponse = await fetch(googleUrl, {
           headers: {
@@ -76,6 +76,7 @@ export async function GET(request: Request) {
       source: "whoismyrepresentative.com (Fallback - May have outdated data)",
       timestamp: new Date().toISOString(),
       multipleDistricts: false,
+      warning: "Representative data may be outdated. Please verify at house.gov or senate.gov",
     })
   } catch (error) {
     console.error("[v0] ✗ Unexpected error fetching representatives:", error)

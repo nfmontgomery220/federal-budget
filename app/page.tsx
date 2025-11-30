@@ -27,6 +27,7 @@ import BalancedBudgetBuilder from "../components/balanced-budget-builder"
 import BudgetAnalyticsDashboard from "../components/budget-analytics-dashboard"
 import RevenueBreakdown from "../components/revenue-breakdown"
 import ContactCongressTool from "../components/contact-congress-tool"
+import ConsensusDashboard from "../components/consensus-dashboard"
 
 // Import other tools from root directory
 import TaxDesignCalculator from "../tax-design-calculator"
@@ -58,6 +59,7 @@ type ActiveTool =
   | "full-proposal"
   | "legislative-updates"
   | "contact-congress"
+  | "consensus"
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState<ActiveTool>("dashboard")
@@ -113,6 +115,8 @@ export default function HomePage() {
         return <LegislativeUpdateSystem />
       case "contact-congress":
         return <ContactCongressTool preloadedBudgetData={budgetDataForCongress} />
+      case "consensus":
+        return <ConsensusDashboard />
       default:
         return <DashboardHome setActiveView={setActiveView} />
     }
@@ -288,6 +292,22 @@ function DashboardHome({ setActiveView }: { setActiveView: (view: ActiveTool) =>
                 onClick={() => setActiveView("contact-congress")}
               >
                 Contact Your Reps
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Consensus & Coalition Dashboard */}
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-yellow-600" />
+                <CardTitle className="text-yellow-900">Consensus & Coalitions</CardTitle>
+              </div>
+              <CardDescription>See how your budget approach compares to other Americans</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full bg-yellow-600 hover:bg-yellow-700" onClick={() => setActiveView("consensus")}>
+                View Consensus Data
               </Button>
             </CardContent>
           </Card>
