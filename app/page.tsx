@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Phone,
+  Database,
 } from "lucide-react"
 
 // Import components from the components directory
@@ -28,6 +29,7 @@ import BudgetAnalyticsDashboard from "../components/budget-analytics-dashboard"
 import RevenueBreakdown from "../components/revenue-breakdown"
 import ContactCongressTool from "../components/contact-congress-tool"
 import ConsensusDashboard from "../components/consensus-dashboard"
+import AdminCongressData from "../components/admin-congress-data"
 
 // Import other tools from root directory
 import TaxDesignCalculator from "../tax-design-calculator"
@@ -60,6 +62,7 @@ type ActiveTool =
   | "legislative-updates"
   | "contact-congress"
   | "consensus"
+  | "admin-congress"
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState<ActiveTool>("dashboard")
@@ -117,6 +120,8 @@ export default function HomePage() {
         return <ContactCongressTool preloadedBudgetData={budgetDataForCongress} />
       case "consensus":
         return <ConsensusDashboard />
+      case "admin-congress":
+        return <AdminCongressData />
       default:
         return <DashboardHome setActiveView={setActiveView} />
     }
@@ -410,6 +415,19 @@ function DashboardHome({ setActiveView }: { setActiveView: (view: ActiveTool) =>
               <div className="text-center">
                 <div className="font-medium">Legislative Updates</div>
                 <div className="text-xs text-gray-500">Real-time tracking</div>
+              </div>
+            </Button>
+
+            {/* Admin Congress Data */}
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center gap-2 bg-indigo-50 border-indigo-200"
+              onClick={() => setActiveView("admin-congress")}
+            >
+              <Database className="h-5 w-5 text-indigo-600" />
+              <div className="text-center">
+                <div className="font-medium text-indigo-900">Admin: Congress DB</div>
+                <div className="text-xs text-indigo-600">Data management</div>
               </div>
             </Button>
           </div>

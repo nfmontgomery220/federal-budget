@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -9,79 +10,170 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid ZIP code" }, { status: 400 })
   }
 
+  try {
+    // First, get district from ZIP using external API
+    const district = await getDistrictFromZip(zip)
+
+    if (!district) {
+      return NextResponse.json(
+        {
+          error: "Unable to determine congressional district",
+          representatives: [],
+        },
+        { status: 404 },
+      )
+    }
+
+    console.log(`[v0] ZIP ${zip} is in district ${district.state}-${district.district || "Senate"}`)
+
+    // Query our own database for accurate, verified representatives
+    const representatives = await getRepresentativesFromDatabase(district.state, district.district)
+
+    if (representatives.length > 0) {
+      console.log(`[v0] ✓ Found ${representatives.length} representatives in our database`)
+      return NextResponse.json({
+        representatives,
+        source: "FiscalClarity Database (Verified)",
+        timestamp: new Date().toISOString(),
+        district: `${district.state}${district.district ? `-${district.district}` : ""}`,
+      })
+    }
+
+    // Fallback if database is empty
+    console.log("[v0] ⚠ Database empty, falling back to external APIs")
+    return await fallbackToExternalAPI(zip, address)
+  } catch (error) {
+    console.error("[v0] ✗ Error fetching representatives:", error)
+    return NextResponse.json(
+      {
+        error: "Service temporarily unavailable",
+        representatives: [],
+      },
+      { status: 500 },
+    )
+  }
+}
+
+async function getDistrictFromZip(zip: string): Promise<{ state: string; district?: string } | null> {
+  try {
+    const url = `https://whoismyrepresentative.com/getall_mems.php?zip=${zip}&output=json`
+    const response = await fetch(url, {
+      headers: { "User-Agent": "FiscalClarity/1.0" },
+    })
+
+    if (!response.ok) return null
+
+    const data = await response.json()
+
+    if (!data.results || data.results.length === 0) return null
+
+    // Get state from first result
+    const firstMember = data.results[0]
+    const state = firstMember.state
+
+    // Find House member to get district
+    const houseMember = data.results.find((m: any) => m.office?.toLowerCase().includes("representative"))
+
+    return {
+      state,
+      district: houseMember?.district || undefined,
+    }
+  } catch (error) {
+    console.error("[v0] Error getting district from ZIP:", error)
+    return null
+  }
+}
+
+async function getRepresentativesFromDatabase(state: string, district?: string) {
+  const supabaseUrl = process.env.SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Missing Supabase credentials")
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey)
+
+  // Get House representative for this district
+  const houseQuery = supabase.from("congress_members").select("*").eq("chamber", "house").eq("state", state)
+
+  if (district) {
+    houseQuery.eq("district", district.padStart(2, "0"))
+  }
+
+  const { data: houseData, error: houseError } = await houseQuery
+
+  if (houseError) {
+    console.error("[v0] Database error fetching House member:", houseError)
+  }
+
+  // Get both Senators for this state
+  const { data: senateData, error: senateError } = await supabase
+    .from("congress_members")
+    .select("*")
+    .eq("chamber", "senate")
+    .eq("state", state)
+
+  if (senateError) {
+    console.error("[v0] Database error fetching Senators:", senateError)
+  }
+
+  const allMembers = [...(houseData || []), ...(senateData || [])]
+
+  return allMembers.map((member) => ({
+    id: member.bioguide_id,
+    name: member.current_name,
+    party: member.party,
+    chamber: member.chamber === "senate" ? "Senate" : "House",
+    state: member.state,
+    district: member.district,
+    phone: member.office_phone || "",
+    email: member.office_email,
+    website: member.congress_gov_url || `https://www.congress.gov/member/${member.bioguide_id}`,
+    photoUrl: `https://bioguide.congress.gov/bioguide/photo/${member.bioguide_id[0]}/${member.bioguide_id}.jpg`,
+    officeAddress: member.dc_office_address,
+    contactForm: member.congress_gov_url ? `${member.congress_gov_url}/contact` : undefined,
+    dataSource: "verified-database",
+    lastUpdated: member.last_updated,
+  }))
+}
+
+async function fallbackToExternalAPI(zip: string, address?: string) {
   const googleApiKey = process.env.Google_Civic_api_key
   const lookupAddress = address || zip
 
-  try {
-    if (googleApiKey) {
-      console.log("[v0] Attempting Google Civic API lookup for:", lookupAddress)
+  if (googleApiKey) {
+    try {
+      const googleUrl = `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(lookupAddress)}&key=${googleApiKey}`
+      const googleResponse = await fetch(googleUrl)
 
-      try {
-        const googleUrl = `https://www.googleapis.com/civicinfo/v2/representatives?address=${encodeURIComponent(lookupAddress)}&includeOffices=true&levels=country&roles=legislatorLowerBody&roles=legislatorUpperBody&key=${googleApiKey}`
+      if (googleResponse.ok) {
+        const data = await googleResponse.json()
+        const representatives = parseGoogleCivicResponse(data)
 
-        const googleResponse = await fetch(googleUrl, {
-          headers: {
-            "Cache-Control": "no-cache",
-          },
+        return NextResponse.json({
+          representatives,
+          source: "Google Civic Information API (Fallback)",
+          timestamp: new Date().toISOString(),
         })
-
-        if (googleResponse.ok) {
-          const data = await googleResponse.json()
-          const representatives = parseGoogleCivicResponse(data)
-          console.log("[v0] ✓ Google Civic API SUCCESS - Found", representatives.length, "representatives")
-          console.log("[v0] Representatives:", representatives.map((r) => `${r.name} (${r.chamber})`).join(", "))
-
-          return NextResponse.json({
-            representatives,
-            source: "Google Civic Information API",
-            timestamp: new Date().toISOString(),
-            multipleDistricts: !address && representatives.length > 3,
-          })
-        } else {
-          const errorData = await googleResponse.json().catch(() => ({}))
-          console.log("[v0] ✗ Google Civic API failed with status:", googleResponse.status)
-          console.log("[v0] Error details:", errorData.error?.message || "Unknown error")
-        }
-      } catch (googleError) {
-        console.log("[v0] ✗ Google Civic API exception:", googleError)
       }
-    } else {
-      console.log("[v0] No Google API key configured, using fallback API")
+    } catch (error) {
+      console.log("[v0] Google API fallback failed:", error)
     }
-
-    console.log("[v0] Falling back to whoismyrepresentative.com API for ZIP:", zip)
-
-    const url = `https://whoismyrepresentative.com/getall_mems.php?zip=${zip}&output=json`
-
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "FiscalClarity/1.0",
-        "Cache-Control": "no-cache",
-      },
-    })
-
-    if (!response.ok) {
-      console.error("[v0] ✗ whoismyrepresentative.com API error:", response.status)
-      return NextResponse.json({ error: "Unable to fetch representatives", representatives: [] }, { status: 500 })
-    }
-
-    const data = await response.json()
-    const representatives = parseWhoIsMyRepResponse(data)
-
-    console.log("[v0] ✓ Fallback API SUCCESS - Found", representatives.length, "representatives")
-    console.log("[v0] Representatives:", representatives.map((r) => `${r.name} (${r.chamber})`).join(", "))
-
-    return NextResponse.json({
-      representatives,
-      source: "whoismyrepresentative.com (Fallback - May have outdated data)",
-      timestamp: new Date().toISOString(),
-      multipleDistricts: false,
-      warning: "Representative data may be outdated. Please verify at house.gov or senate.gov",
-    })
-  } catch (error) {
-    console.error("[v0] ✗ Unexpected error fetching representatives:", error)
-    return NextResponse.json({ error: "Service temporarily unavailable", representatives: [] }, { status: 500 })
   }
+
+  // Final fallback
+  const url = `https://whoismyrepresentative.com/getall_mems.php?zip=${zip}&output=json`
+  const response = await fetch(url)
+  const data = await response.json()
+  const representatives = parseWhoIsMyRepResponse(data)
+
+  return NextResponse.json({
+    representatives,
+    source: "whoismyrepresentative.com (May be outdated)",
+    timestamp: new Date().toISOString(),
+    warning: "Using fallback data. Database needs population.",
+  })
 }
 
 function parseGoogleCivicResponse(data: any) {
