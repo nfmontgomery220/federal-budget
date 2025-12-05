@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import senatorsData from "@/data/senators.json"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -24,13 +24,13 @@ export async function GET(request: Request) {
 
     console.log(`[v0] ZIP ${zip} → State: ${state}`)
 
-    // Get both senators from database
-    const senators = await getSenatorsFromDatabase(state)
+    // Get senators from local JSON
+    const senators = getSenatorsFromJSON(state)
 
     if (senators.length === 0) {
       return NextResponse.json(
         {
-          error: "No senators found in database. Please run Populate Database.",
+          error: "No senators found for this state.",
           representatives: [],
         },
         { status: 404 },
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       representatives: senators,
-      source: "FiscalClarity Verified Database",
+      source: "FiscalClarity Verified Data",
       timestamp: new Date().toISOString(),
       state,
       lookupType: "senate-only",
@@ -1018,45 +1018,24 @@ function getStateFromZip(zip: string): string | null {
   return zipMap[prefix] || null
 }
 
-async function getSenatorsFromDatabase(state: string) {
-  const supabaseUrl = process.env.SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_ANON_KEY
+function getSenatorsFromJSON(state: string) {
+  const stateSenators = senatorsData[state as keyof typeof senatorsData]
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase credentials")
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey)
-
-  const { data: senateData, error: senateError } = await supabase
-    .from("congress_members")
-    .select("*")
-    .eq("chamber", "senate")
-    .eq("state", state)
-
-  if (senateError) {
-    console.error("[v0] Database error fetching Senators:", senateError)
+  if (!stateSenators || stateSenators.length === 0) {
     return []
   }
 
-  if (!senateData || senateData.length === 0) {
-    console.log(`[v0] No senators found for state: ${state}`)
-    return []
-  }
-
-  return senateData.map((member) => ({
-    id: member.bioguide_id,
-    name: member.current_name,
-    party: member.party,
-    chamber: "Senate",
-    state: member.state,
-    district: null,
-    phone: member.office_phone || "(202) 224-3121",
-    email: member.office_email,
-    website: `https://www.congress.gov/member/${member.bioguide_id}`,
-    photoUrl: `https://bioguide.congress.gov/bioguide/photo/${member.bioguide_id[0]}/${member.bioguide_id}.jpg`,
-    officeAddress: member.dc_office_address || "U.S. Capitol, Washington, DC 20515",
-    contactForm: `https://www.congress.gov/member/${member.bioguide_id}/contact`,
-    dataSource: "verified-database",
+  return stateSenators.map((senator, index) => ({
+    id: `${state}-sen-${index + 1}`,
+    name: senator.name,
+    party: senator.party,
+    chamber: "Senate" as const,
+    state: state,
+    phone: senator.phone,
+    email: "", // No direct email - using contact forms
+    website: `https://www.senate.gov`,
+    contactForm: senator.contactForm,
+    officeAddress: "United States Senate, Washington, DC 20510",
+    dataSource: "verified-json",
   }))
 }

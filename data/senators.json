@@ -1,0 +1,702 @@
+{
+  "AL": [
+    {
+      "name": "Tommy Tuberville",
+      "party": "Republican",
+      "contactForm": "https://www.tuberville.senate.gov/contact/",
+      "phone": "(202) 224-4124"
+    },
+    {
+      "name": "Katie Britt",
+      "party": "Republican",
+      "contactForm": "https://www.britt.senate.gov/contact/",
+      "phone": "(202) 224-5744"
+    }
+  ],
+  "AK": [
+    {
+      "name": "Lisa Murkowski",
+      "party": "Republican",
+      "contactForm": "https://www.murkowski.senate.gov/contact",
+      "phone": "(202) 224-6665"
+    },
+    {
+      "name": "Dan Sullivan",
+      "party": "Republican",
+      "contactForm": "https://www.sullivan.senate.gov/contact/email",
+      "phone": "(202) 224-3004"
+    }
+  ],
+  "AZ": [
+    {
+      "name": "Mark Kelly",
+      "party": "Democrat",
+      "contactForm": "https://www.kelly.senate.gov/contact",
+      "phone": "(202) 224-2235"
+    },
+    {
+      "name": "Ruben Gallego",
+      "party": "Democrat",
+      "contactForm": "https://www.gallego.senate.gov/contact",
+      "phone": "(202) 224-4521"
+    }
+  ],
+  "AR": [
+    {
+      "name": "John Boozman",
+      "party": "Republican",
+      "contactForm": "https://www.boozman.senate.gov/public/index.cfm/contact",
+      "phone": "(202) 224-4843"
+    },
+    {
+      "name": "Tom Cotton",
+      "party": "Republican",
+      "contactForm": "https://www.cotton.senate.gov/contact/contact-tom",
+      "phone": "(202) 224-2353"
+    }
+  ],
+  "CA": [
+    {
+      "name": "Alex Padilla",
+      "party": "Democrat",
+      "contactForm": "https://www.padilla.senate.gov/contact/",
+      "phone": "(202) 224-3553"
+    },
+    {
+      "name": "Adam Schiff",
+      "party": "Democrat",
+      "contactForm": "https://www.schiff.senate.gov/contact",
+      "phone": "(202) 224-3841"
+    }
+  ],
+  "CO": [
+    {
+      "name": "Michael Bennet",
+      "party": "Democrat",
+      "contactForm": "https://www.bennet.senate.gov/public/index.cfm/contact",
+      "phone": "(202) 224-5852"
+    },
+    {
+      "name": "John Hickenlooper",
+      "party": "Democrat",
+      "contactForm": "https://www.hickenlooper.senate.gov/contact/",
+      "phone": "(202) 224-5941"
+    }
+  ],
+  "CT": [
+    {
+      "name": "Richard Blumenthal",
+      "party": "Democrat",
+      "contactForm": "https://www.blumenthal.senate.gov/contact/",
+      "phone": "(202) 224-2823"
+    },
+    {
+      "name": "Chris Murphy",
+      "party": "Democrat",
+      "contactForm": "https://www.murphy.senate.gov/contact",
+      "phone": "(202) 224-4041"
+    }
+  ],
+  "DE": [
+    {
+      "name": "Tom Carper",
+      "party": "Democrat",
+      "contactForm": "https://www.carper.senate.gov/public/index.cfm/email-senator-carper",
+      "phone": "(202) 224-2441"
+    },
+    {
+      "name": "Chris Coons",
+      "party": "Democrat",
+      "contactForm": "https://www.coons.senate.gov/contact",
+      "phone": "(202) 224-5042"
+    }
+  ],
+  "FL": [
+    {
+      "name": "Marco Rubio",
+      "party": "Republican",
+      "contactForm": "https://www.rubio.senate.gov/public/index.cfm/contact",
+      "phone": "(202) 224-3041"
+    },
+    {
+      "name": "Rick Scott",
+      "party": "Republican",
+      "contactForm": "https://www.rickscott.senate.gov/contact_rick",
+      "phone": "(202) 224-5274"
+    }
+  ],
+  "GA": [
+    {
+      "name": "Jon Ossoff",
+      "party": "Democrat",
+      "contactForm": "https://www.ossoff.senate.gov/contact/",
+      "phone": "(202) 224-3521"
+    },
+    {
+      "name": "Raphael Warnock",
+      "party": "Democrat",
+      "contactForm": "https://www.warnock.senate.gov/contact/",
+      "phone": "(202) 224-3643"
+    }
+  ],
+  "HI": [
+    {
+      "name": "Brian Schatz",
+      "party": "Democrat",
+      "contactForm": "https://www.schatz.senate.gov/contact",
+      "phone": "(202) 224-3934"
+    },
+    {
+      "name": "Mazie Hirono",
+      "party": "Democrat",
+      "contactForm": "https://www.hirono.senate.gov/contact",
+      "phone": "(202) 224-6361"
+    }
+  ],
+  "ID": [
+    {
+      "name": "Mike Crapo",
+      "party": "Republican",
+      "contactForm": "https://www.crapo.senate.gov/contact/email-mike",
+      "phone": "(202) 224-6142"
+    },
+    {
+      "name": "Jim Risch",
+      "party": "Republican",
+      "contactForm": "https://www.risch.senate.gov/public/index.cfm?p=Email",
+      "phone": "(202) 224-2752"
+    }
+  ],
+  "IL": [
+    {
+      "name": "Tammy Duckworth",
+      "party": "Democrat",
+      "contactForm": "https://www.duckworth.senate.gov/content/contact-senator",
+      "phone": "(202) 224-2854"
+    },
+    {
+      "name": "Dick Durbin",
+      "party": "Democrat",
+      "contactForm": "https://www.durbin.senate.gov/contact/",
+      "phone": "(202) 224-2152"
+    }
+  ],
+  "IN": [
+    {
+      "name": "Todd Young",
+      "party": "Republican",
+      "contactForm": "https://www.young.senate.gov/contact",
+      "phone": "(202) 224-5623"
+    },
+    {
+      "name": "Mike Braun",
+      "party": "Republican",
+      "contactForm": "https://www.braun.senate.gov/contact-mike",
+      "phone": "(202) 224-4814"
+    }
+  ],
+  "IA": [
+    {
+      "name": "Chuck Grassley",
+      "party": "Republican",
+      "contactForm": "https://www.grassley.senate.gov/constituents/questions-and-comments",
+      "phone": "(202) 224-3744"
+    },
+    {
+      "name": "Joni Ernst",
+      "party": "Republican",
+      "contactForm": "https://www.ernst.senate.gov/public/index.cfm/contact",
+      "phone": "(202) 224-3254"
+    }
+  ],
+  "KS": [
+    {
+      "name": "Jerry Moran",
+      "party": "Republican",
+      "contactForm": "https://www.moran.senate.gov/public/index.cfm/e-mail-jerry",
+      "phone": "(202) 224-6521"
+    },
+    {
+      "name": "Roger Marshall",
+      "party": "Republican",
+      "contactForm": "https://www.marshall.senate.gov/contact/",
+      "phone": "(202) 224-4774"
+    }
+  ],
+  "KY": [
+    {
+      "name": "Mitch McConnell",
+      "party": "Republican",
+      "contactForm": "https://www.mcconnell.senate.gov/public/index.cfm?p=contact",
+      "phone": "(202) 224-2541"
+    },
+    {
+      "name": "Rand Paul",
+      "party": "Republican",
+      "contactForm": "https://www.paul.senate.gov/connect/email-rand",
+      "phone": "(202) 224-4343"
+    }
+  ],
+  "LA": [
+    {
+      "name": "Bill Cassidy",
+      "party": "Republican",
+      "contactForm": "https://www.cassidy.senate.gov/contact",
+      "phone": "(202) 224-5824"
+    },
+    {
+      "name": "John Kennedy",
+      "party": "Republican",
+      "contactForm": "https://www.kennedy.senate.gov/public/email-me",
+      "phone": "(202) 224-4623"
+    }
+  ],
+  "ME": [
+    {
+      "name": "Susan Collins",
+      "party": "Republican",
+      "contactForm": "https://www.collins.senate.gov/contact",
+      "phone": "(202) 224-2523"
+    },
+    {
+      "name": "Angus King",
+      "party": "Independent",
+      "contactForm": "https://www.king.senate.gov/contact",
+      "phone": "(202) 224-5344"
+    }
+  ],
+  "MD": [
+    {
+      "name": "Ben Cardin",
+      "party": "Democrat",
+      "contactForm": "https://www.cardin.senate.gov/contact/",
+      "phone": "(202) 224-4524"
+    },
+    {
+      "name": "Chris Van Hollen",
+      "party": "Democrat",
+      "contactForm": "https://www.vanhollen.senate.gov/content/contact-senator",
+      "phone": "(202) 224-4654"
+    }
+  ],
+  "MA": [
+    {
+      "name": "Elizabeth Warren",
+      "party": "Democrat",
+      "contactForm": "https://www.warren.senate.gov/contact/shareyouropinion",
+      "phone": "(202) 224-4543"
+    },
+    {
+      "name": "Ed Markey",
+      "party": "Democrat",
+      "contactForm": "https://www.markey.senate.gov/contact",
+      "phone": "(202) 224-2742"
+    }
+  ],
+  "MI": [
+    {
+      "name": "Debbie Stabenow",
+      "party": "Democrat",
+      "contactForm": "https://www.stabenow.senate.gov/contact",
+      "phone": "(202) 224-4822"
+    },
+    {
+      "name": "Gary Peters",
+      "party": "Democrat",
+      "contactForm": "https://www.peters.senate.gov/contact",
+      "phone": "(202) 224-6221"
+    }
+  ],
+  "MN": [
+    {
+      "name": "Amy Klobuchar",
+      "party": "Democrat",
+      "contactForm": "https://www.klobuchar.senate.gov/public/index.cfm/contact",
+      "phone": "(202) 224-3244"
+    },
+    {
+      "name": "Tina Smith",
+      "party": "Democrat",
+      "contactForm": "https://www.smith.senate.gov/content/contact-senator",
+      "phone": "(202) 224-5641"
+    }
+  ],
+  "MS": [
+    {
+      "name": "Roger Wicker",
+      "party": "Republican",
+      "contactForm": "https://www.wicker.senate.gov/public/index.cfm/contact",
+      "phone": "(202) 224-6253"
+    },
+    {
+      "name": "Cindy Hyde-Smith",
+      "party": "Republican",
+      "contactForm": "https://www.hydesmith.senate.gov/content/contact-senator",
+      "phone": "(202) 224-5054"
+    }
+  ],
+  "MO": [
+    {
+      "name": "Josh Hawley",
+      "party": "Republican",
+      "contactForm": "https://www.hawley.senate.gov/contact-senator-hawley",
+      "phone": "(202) 224-6154"
+    },
+    {
+      "name": "Eric Schmitt",
+      "party": "Republican",
+      "contactForm": "https://www.schmitt.senate.gov/contact",
+      "phone": "(202) 224-5721"
+    }
+  ],
+  "MT": [
+    {
+      "name": "Jon Tester",
+      "party": "Democrat",
+      "contactForm": "https://www.tester.senate.gov/contact/",
+      "phone": "(202) 224-2644"
+    },
+    {
+      "name": "Steve Daines",
+      "party": "Republican",
+      "contactForm": "https://www.daines.senate.gov/connect/email-steve",
+      "phone": "(202) 224-2651"
+    }
+  ],
+  "NE": [
+    {
+      "name": "Deb Fischer",
+      "party": "Republican",
+      "contactForm": "https://www.fischer.senate.gov/public/index.cfm/contact",
+      "phone": "(202) 224-6551"
+    },
+    {
+      "name": "Pete Ricketts",
+      "party": "Republican",
+      "contactForm": "https://www.ricketts.senate.gov/contact/",
+      "phone": "(202) 224-4224"
+    }
+  ],
+  "NV": [
+    {
+      "name": "Catherine Cortez Masto",
+      "party": "Democrat",
+      "contactForm": "https://www.cortezmasto.senate.gov/contact",
+      "phone": "(202) 224-3542"
+    },
+    {
+      "name": "Jacky Rosen",
+      "party": "Democrat",
+      "contactForm": "https://www.rosen.senate.gov/contact_jacky",
+      "phone": "(202) 224-6244"
+    }
+  ],
+  "NH": [
+    {
+      "name": "Jeanne Shaheen",
+      "party": "Democrat",
+      "contactForm": "https://www.shaheen.senate.gov/contact/contact-jeanne",
+      "phone": "(202) 224-2841"
+    },
+    {
+      "name": "Maggie Hassan",
+      "party": "Democrat",
+      "contactForm": "https://www.hassan.senate.gov/content/contact-senator",
+      "phone": "(202) 224-3324"
+    }
+  ],
+  "NJ": [
+    {
+      "name": "Cory Booker",
+      "party": "Democrat",
+      "contactForm": "https://www.booker.senate.gov/contact/write-to-the-senator",
+      "phone": "(202) 224-3224"
+    },
+    {
+      "name": "Andy Kim",
+      "party": "Democrat",
+      "contactForm": "https://www.kim.senate.gov/contact",
+      "phone": "(202) 224-4744"
+    }
+  ],
+  "NM": [
+    {
+      "name": "Martin Heinrich",
+      "party": "Democrat",
+      "contactForm": "https://www.heinrich.senate.gov/contact",
+      "phone": "(202) 224-5521"
+    },
+    {
+      "name": "Ben Ray Luján",
+      "party": "Democrat",
+      "contactForm": "https://www.lujan.senate.gov/contact/",
+      "phone": "(202) 224-6621"
+    }
+  ],
+  "NY": [
+    {
+      "name": "Chuck Schumer",
+      "party": "Democrat",
+      "contactForm": "https://www.schumer.senate.gov/contact/email-chuck",
+      "phone": "(202) 224-6542"
+    },
+    {
+      "name": "Kirsten Gillibrand",
+      "party": "Democrat",
+      "contactForm": "https://www.gillibrand.senate.gov/contact/email-me",
+      "phone": "(202) 224-4451"
+    }
+  ],
+  "NC": [
+    {
+      "name": "Thom Tillis",
+      "party": "Republican",
+      "contactForm": "https://www.tillis.senate.gov/email-me",
+      "phone": "(202) 224-6342"
+    },
+    {
+      "name": "Ted Budd",
+      "party": "Republican",
+      "contactForm": "https://www.budd.senate.gov/contact/",
+      "phone": "(202) 224-3154"
+    }
+  ],
+  "ND": [
+    {
+      "name": "John Hoeven",
+      "party": "Republican",
+      "contactForm": "https://www.hoeven.senate.gov/public/index.cfm/email-the-senator",
+      "phone": "(202) 224-2551"
+    },
+    {
+      "name": "Kevin Cramer",
+      "party": "Republican",
+      "contactForm": "https://www.cramer.senate.gov/contact/",
+      "phone": "(202) 224-2043"
+    }
+  ],
+  "OH": [
+    {
+      "name": "Sherrod Brown",
+      "party": "Democrat",
+      "contactForm": "https://www.brown.senate.gov/contact/",
+      "phone": "(202) 224-2315"
+    },
+    {
+      "name": "J.D. Vance",
+      "party": "Republican",
+      "contactForm": "https://www.vance.senate.gov/contact/",
+      "phone": "(202) 224-3353"
+    }
+  ],
+  "OK": [
+    {
+      "name": "James Lankford",
+      "party": "Republican",
+      "contactForm": "https://www.lankford.senate.gov/contact/email",
+      "phone": "(202) 224-5754"
+    },
+    {
+      "name": "Markwayne Mullin",
+      "party": "Republican",
+      "contactForm": "https://www.mullin.senate.gov/contact/",
+      "phone": "(202) 224-4721"
+    }
+  ],
+  "OR": [
+    {
+      "name": "Ron Wyden",
+      "party": "Democrat",
+      "contactForm": "https://www.wyden.senate.gov/contact/",
+      "phone": "(202) 224-5244"
+    },
+    {
+      "name": "Jeff Merkley",
+      "party": "Democrat",
+      "contactForm": "https://www.merkley.senate.gov/contact/",
+      "phone": "(202) 224-3753"
+    }
+  ],
+  "PA": [
+    {
+      "name": "Bob Casey",
+      "party": "Democrat",
+      "contactForm": "https://www.casey.senate.gov/contact/",
+      "phone": "(202) 224-6324"
+    },
+    {
+      "name": "John Fetterman",
+      "party": "Democrat",
+      "contactForm": "https://www.fetterman.senate.gov/contact/",
+      "phone": "(202) 224-4254"
+    }
+  ],
+  "RI": [
+    {
+      "name": "Jack Reed",
+      "party": "Democrat",
+      "contactForm": "https://www.reed.senate.gov/contact/",
+      "phone": "(202) 224-4642"
+    },
+    {
+      "name": "Sheldon Whitehouse",
+      "party": "Democrat",
+      "contactForm": "https://www.whitehouse.senate.gov/contact/",
+      "phone": "(202) 224-2921"
+    }
+  ],
+  "SC": [
+    {
+      "name": "Lindsey Graham",
+      "party": "Republican",
+      "contactForm": "https://www.lgraham.senate.gov/public/index.cfm/e-mail-senator-graham",
+      "phone": "(202) 224-5972"
+    },
+    {
+      "name": "Tim Scott",
+      "party": "Republican",
+      "contactForm": "https://www.scott.senate.gov/contact/email-me",
+      "phone": "(202) 224-6121"
+    }
+  ],
+  "SD": [
+    {
+      "name": "John Thune",
+      "party": "Republican",
+      "contactForm": "https://www.thune.senate.gov/public/index.cfm/contact",
+      "phone": "(202) 224-2321"
+    },
+    {
+      "name": "Mike Rounds",
+      "party": "Republican",
+      "contactForm": "https://www.rounds.senate.gov/contact/email-mike",
+      "phone": "(202) 224-5842"
+    }
+  ],
+  "TN": [
+    {
+      "name": "Marsha Blackburn",
+      "party": "Republican",
+      "contactForm": "https://www.blackburn.senate.gov/email-me",
+      "phone": "(202) 224-3344"
+    },
+    {
+      "name": "Bill Hagerty",
+      "party": "Republican",
+      "contactForm": "https://www.hagerty.senate.gov/contact/",
+      "phone": "(202) 224-4944"
+    }
+  ],
+  "TX": [
+    {
+      "name": "John Cornyn",
+      "party": "Republican",
+      "contactForm": "https://www.cornyn.senate.gov/contact",
+      "phone": "(202) 224-2934"
+    },
+    {
+      "name": "Ted Cruz",
+      "party": "Republican",
+      "contactForm": "https://www.cruz.senate.gov/contact",
+      "phone": "(202) 224-5922"
+    }
+  ],
+  "UT": [
+    {
+      "name": "Mike Lee",
+      "party": "Republican",
+      "contactForm": "https://www.lee.senate.gov/contact/",
+      "phone": "(202) 224-5444"
+    },
+    {
+      "name": "Mitt Romney",
+      "party": "Republican",
+      "contactForm": "https://www.romney.senate.gov/contact/",
+      "phone": "(202) 224-5251"
+    }
+  ],
+  "VT": [
+    {
+      "name": "Bernie Sanders",
+      "party": "Independent",
+      "contactForm": "https://www.sanders.senate.gov/contact/",
+      "phone": "(202) 224-5141"
+    },
+    {
+      "name": "Peter Welch",
+      "party": "Democrat",
+      "contactForm": "https://www.welch.senate.gov/contact/",
+      "phone": "(202) 224-4242"
+    }
+  ],
+  "VA": [
+    {
+      "name": "Mark Warner",
+      "party": "Democrat",
+      "contactForm": "https://www.warner.senate.gov/public/index.cfm?p=Contact",
+      "phone": "(202) 224-2023"
+    },
+    {
+      "name": "Tim Kaine",
+      "party": "Democrat",
+      "contactForm": "https://www.kaine.senate.gov/contact",
+      "phone": "(202) 224-4024"
+    }
+  ],
+  "WA": [
+    {
+      "name": "Patty Murray",
+      "party": "Democrat",
+      "contactForm": "https://www.murray.senate.gov/write-to-patty/",
+      "phone": "(202) 224-2621"
+    },
+    {
+      "name": "Maria Cantwell",
+      "party": "Democrat",
+      "contactForm": "https://www.cantwell.senate.gov/contact/email/form",
+      "phone": "(202) 224-3441"
+    }
+  ],
+  "WV": [
+    {
+      "name": "Shelley Moore Capito",
+      "party": "Republican",
+      "contactForm": "https://www.capito.senate.gov/contact/contact-shelley",
+      "phone": "(202) 224-6472"
+    },
+    {
+      "name": "Joe Manchin",
+      "party": "Democrat",
+      "contactForm": "https://www.manchin.senate.gov/contact-joe/",
+      "phone": "(202) 224-3954"
+    }
+  ],
+  "WI": [
+    {
+      "name": "Ron Johnson",
+      "party": "Republican",
+      "contactForm": "https://www.ronjohnson.senate.gov/public/index.cfm/email-the-senator",
+      "phone": "(202) 224-5323"
+    },
+    {
+      "name": "Tammy Baldwin",
+      "party": "Democrat",
+      "contactForm": "https://www.baldwin.senate.gov/feedback",
+      "phone": "(202) 224-5653"
+    }
+  ],
+  "WY": [
+    {
+      "name": "John Barrasso",
+      "party": "Republican",
+      "contactForm": "https://www.barrasso.senate.gov/public/index.cfm/contact-form",
+      "phone": "(202) 224-6441"
+    },
+    {
+      "name": "Cynthia Lummis",
+      "party": "Republican",
+      "contactForm": "https://www.lummis.senate.gov/contact/contact-form/",
+      "phone": "(202) 224-3424"
+    }
+  ]
+}

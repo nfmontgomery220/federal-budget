@@ -389,39 +389,78 @@ Sincerely,
                   <Send className="h-5 w-5 text-blue-600" />
                   Step 3: Send Your Message
                 </CardTitle>
-                <CardDescription>Choose how to contact your representatives</CardDescription>
+                <CardDescription>Copy your message and submit it through official Senate contact forms</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-4">
-                  <Button onClick={sendEmail} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Open Email Client
-                  </Button>
-                  <Button onClick={copyEmailContent} variant="outline" className="flex-1 bg-transparent">
+                <Alert className="bg-blue-50 border-blue-200">
+                  <Mail className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-900">
+                    <strong>How to Contact Your Senators:</strong>
+                    <ol className="mt-2 space-y-1 ml-4 list-decimal">
+                      <li>Click "Copy Message" below to copy your budget message to clipboard</li>
+                      <li>Click "Contact [Senator Name]" buttons to open their official forms</li>
+                      <li>Paste your message into each contact form and submit</li>
+                    </ol>
+                  </AlertDescription>
+                </Alert>
+
+                <div className="space-y-3">
+                  <Button onClick={copyEmailContent} className="w-full bg-blue-600 hover:bg-blue-700" size="lg">
                     {copied ? (
                       <>
-                        <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
-                        Copied!
+                        <CheckCircle2 className="h-5 w-5 mr-2 text-white" />
+                        Message Copied to Clipboard!
                       </>
                     ) : (
                       <>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Preview & Copy
+                        <Copy className="h-5 w-5 mr-2" />
+                        Copy Message to Clipboard
                       </>
                     )}
                   </Button>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Open Contact Forms:</Label>
+                    {representatives
+                      .filter((rep) => selectedReps.has(rep.id))
+                      .map((rep) => (
+                        <Button
+                          key={rep.id}
+                          onClick={() => window.open(rep.contactForm, "_blank")}
+                          variant="outline"
+                          className="w-full justify-between"
+                          size="lg"
+                        >
+                          <span className="flex items-center gap-2">
+                            <ExternalLink className="h-4 w-4" />
+                            Contact {rep.name}
+                          </span>
+                          <Badge
+                            variant={
+                              rep.party === "Democrat"
+                                ? "default"
+                                : rep.party === "Republican"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {rep.party}
+                          </Badge>
+                        </Button>
+                      ))}
+                  </div>
                 </div>
 
-                <Alert className="bg-blue-50 border-blue-200">
-                  <Users className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-blue-900">
+                <Alert className="bg-green-50 border-green-200">
+                  <Users className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-900">
                     <strong>
-                      Sending to {selectedReps.size} representative{selectedReps.size > 1 ? "s" : ""}:
+                      Contacting {selectedReps.size} Senator{selectedReps.size > 1 ? "s" : ""}:
                     </strong>
                     <br />
                     {representatives
                       .filter((rep) => selectedReps.has(rep.id))
-                      .map((rep) => `${rep.name} (${rep.chamber})`)
+                      .map((rep) => `${rep.name} (${rep.party})`)
                       .join(", ")}
                   </AlertDescription>
                 </Alert>
