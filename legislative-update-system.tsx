@@ -305,6 +305,40 @@ const legislativeData = {
         trumpQuote: "This is one big, beautiful bill - the most beautiful bill ever signed!",
       },
 
+      // PAYGO sequestration trigger details
+      paygoSequestration: {
+        triggered: true,
+        reason: "$3.3T deficit increase without revenue offsets violated PAYGO rules",
+        automaticCutAmount: 500, // $500B over 10 years
+        implementationDate: "January 1, 2026",
+        affectedPrograms: [
+          {
+            program: "Medicare",
+            maxCutAllowed: 4, // 4% maximum cut by statute
+            annualImpact: 30, // $30B per year
+            beneficiariesAffected: 66000000, // All 66M Medicare beneficiaries
+          },
+          {
+            program: "Social Security",
+            exempt: false, // Despite tradition, could be included
+            potentialCut: 2, // 2% possible under extreme interpretation
+            annualImpact: 20, // $20B per year if not exempted
+          },
+          {
+            program: "Other Mandatory Spending",
+            cutPercentage: 8, // Remaining cuts hit other programs harder
+            annualImpact: 50, // $50B per year from various programs
+          },
+        ],
+        totalFiscalImpact: {
+          combined10Year: 3800, // $3.3T deficit increase + $500B PAYGO cuts
+          netDeficitIncrease: 2800, // $3.3T - $500B = still $2.8T worse
+          trustFundAcceleration: "Cuts worsen trust fund depletion by 1-2 years",
+        },
+        politicalContext: "Automatic cuts provide political cover for entitlement reductions",
+        legalChallenges: "Expected litigation over scope of PAYGO cuts to Social Security",
+      },
+
       healthcareImpact: {
         medicaidCutsTotal: 900, // $900B over 10 years
         peopleLosingCoverage: 12000000, // 12 million Americans
@@ -482,6 +516,14 @@ export default function LegislativeUpdateSystem({ onBack }: LegislativeUpdateSys
             largest single deficit increase in U.S. history. While extending tax cuts for corporations and high earners,
             it cuts healthcare for 12 million Americans. Remaining pending legislation could add another{" "}
             <strong>{formatBillions(getTotalPendingImpact())}</strong>.
+            {selectedBill.paygoSequestration && selectedBill.paygoSequestration.triggered && (
+              <>
+                {" "}
+                Additionally, PAYGO sequestration rules have been triggered, mandating{" "}
+                <strong>{formatBillions(selectedBill.paygoSequestration.automaticCutAmount)}</strong> in automatic
+                spending cuts to take effect January 1, 2026, impacting Medicare and other mandatory programs.
+              </>
+            )}
           </AlertDescription>
         </Alert>
 
@@ -740,6 +782,47 @@ export default function LegislativeUpdateSystem({ onBack }: LegislativeUpdateSys
                         </div>
                       </div>
                     </div>
+
+                    {/* PAYGO Sequestration Details */}
+                    {selectedBill.paygoSequestration && selectedBill.paygoSequestration.triggered && (
+                      <div className="p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+                        <h4 className="font-medium mb-4 text-purple-900">⚖️ PAYGO Sequestration Triggered</h4>
+                        <div className="space-y-3">
+                          <div className="p-3 bg-white rounded-lg">
+                            <div className="font-medium text-sm text-purple-900">Reason for Trigger</div>
+                            <div className="text-xs text-purple-800">{selectedBill.paygoSequestration.reason}</div>
+                          </div>
+                          <div className="p-3 bg-white rounded-lg">
+                            <div className="font-medium text-sm text-purple-900">Automatic Cut Amount</div>
+                            <div className="text-xs text-purple-800">
+                              {formatBillions(selectedBill.paygoSequestration.automaticCutAmount)} over 10 years
+                            </div>
+                          </div>
+                          <div className="p-3 bg-white rounded-lg">
+                            <div className="font-medium text-sm text-purple-900">Implementation Date</div>
+                            <div className="text-xs text-purple-800">
+                              {selectedBill.paygoSequestration.implementationDate}
+                            </div>
+                          </div>
+                          <div className="p-3 bg-red-100 rounded-lg">
+                            <div className="text-sm font-medium text-red-900">Impacted Programs:</div>
+                            <ul className="text-xs text-red-800 mt-2 space-y-1">
+                              {selectedBill.paygoSequestration.affectedPrograms.map((prog, i) => (
+                                <li key={i}>
+                                  - <strong>{prog.program}:</strong>{" "}
+                                  {prog.exempt !== undefined && prog.exempt
+                                    ? "Exempt"
+                                    : `${prog.annualImpact}B annual impact`}
+                                  {prog.cutPercentage && ` (${prog.cutPercentage}% cut)`}
+                                  {prog.potentialCut && ` (Potential ${prog.potentialCut}%)`}
+                                  {prog.maxCutAllowed && ` (Max allowed ${prog.maxCutAllowed}%)`}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Healthcare Impact */}
                     <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
@@ -1195,6 +1278,9 @@ export default function LegislativeUpdateSystem({ onBack }: LegislativeUpdateSys
                     <li>• Climate program elimination economic modeling</li>
                     <li>• Tax cut beneficiary analysis by income level</li>
                     <li>• Border spending allocation and effectiveness tracking</li>
+                    {selectedBill.paygoSequestration && selectedBill.paygoSequestration.triggered && (
+                      <li>• PAYGO sequestration impact on Medicare and other mandatory spending</li>
+                    )}
                   </ul>
                 </div>
               </CardContent>
@@ -1235,6 +1321,19 @@ export default function LegislativeUpdateSystem({ onBack }: LegislativeUpdateSys
                       <div className="text-xs text-gray-500">July 4, 2025</div>
                     </div>
                   </div>
+
+                  {selectedBill.paygoSequestration && selectedBill.paygoSequestration.triggered && (
+                    <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                      <AlertTriangle className="h-5 w-5 text-purple-600 mt-0.5" />
+                      <div>
+                        <div className="font-medium text-sm text-purple-900">PAYGO Sequestration Triggered</div>
+                        <div className="text-xs text-purple-700">
+                          $500B in automatic cuts to Medicare and other mandatory spending.
+                        </div>
+                        <div className="text-xs text-gray-500">July 4, 2025</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
