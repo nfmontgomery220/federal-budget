@@ -33,52 +33,64 @@ import {
   Briefcase,
 } from "lucide-react"
 
-const totalDefenseSpending = 816
+// FY2026: $838.7B discretionary + $156.2B reconciliation mandatory = ~$995B total
+const totalDefenseSpending = 995
+const discretionarySpending = 838.7
+const reconciliationMandatory = 156.2
 
+// FY2026 branch allocations (updated from DoD budget documents)
 const militaryBranches = [
-  { name: "Army", amount: 185, percentage: 22.7, color: "#10b981", icon: Users },
-  { name: "Navy", amount: 165, percentage: 20.2, color: "#3b82f6", icon: Ship },
-  { name: "Air Force", amount: 156, percentage: 19.1, color: "#8b5cf6", icon: Plane },
-  { name: "Space Force", amount: 29, percentage: 3.6, color: "#06b6d4", icon: Globe },
-  { name: "Defense-Wide", amount: 281, percentage: 34.4, color: "#f59e0b", icon: Shield },
+  { name: "Army", amount: 203, percentage: 20.4, color: "#10b981", icon: Users },
+  { name: "Navy", amount: 207, percentage: 20.8, color: "#3b82f6", icon: Ship },
+  { name: "Air Force", amount: 188, percentage: 18.9, color: "#8b5cf6", icon: Plane },
+  { name: "Space Force", amount: 33, percentage: 3.3, color: "#06b6d4", icon: Globe },
+  { name: "Defense-Wide", amount: 364, percentage: 36.6, color: "#f59e0b", icon: Shield },
 ]
 
+// FY2026 spending categories (updated with reconciliation funds)
 const spendingCategories = [
-  { category: "Personnel", amount: 162, percentage: 19.9, description: "Military pay and benefits" },
-  { category: "Operations & Maintenance", amount: 289, percentage: 35.4, description: "Day-to-day operations" },
-  { category: "Procurement", amount: 167, percentage: 20.5, description: "Equipment and weapons systems" },
-  { category: "Research & Development", amount: 140, percentage: 17.2, description: "Military R&D programs" },
-  { category: "Military Construction", amount: 11, percentage: 1.3, description: "Base construction projects" },
-  { category: "Family Housing", amount: 1, percentage: 0.1, description: "Military family housing" },
-  { category: "Other", amount: 46, percentage: 5.6, description: "Special operations and classified" },
+  { category: "Personnel", amount: 178.4, percentage: 17.9, description: "Military pay and benefits" },
+  { category: "Operations & Maintenance", amount: 296.8, percentage: 29.8, description: "Day-to-day operations" },
+  { category: "Procurement", amount: 167.5, percentage: 16.8, description: "Equipment and weapons systems" },
+  { category: "Research & Development", amount: 127.8, percentage: 12.8, description: "Military R&D programs" },
+  { category: "Military Construction", amount: 14.2, percentage: 1.4, description: "Base construction projects" },
+  { category: "Family Housing", amount: 1.8, percentage: 0.2, description: "Military family housing" },
+  { category: "Reconciliation/Supplemental", amount: 156.2, percentage: 15.7, description: "FY2025 reconciliation mandatory spending" },
+  { category: "Other", amount: 52.3, percentage: 5.3, description: "Special operations and classified" },
 ]
 
+// FY2026 major programs (updated from CRS R48860)
 const majorPrograms = [
-  { program: "F-35 Lightning II", cost: 78, status: "Active", branch: "Multi-Service" },
-  { program: "Virginia-class Submarine", cost: 22, status: "Active", branch: "Navy" },
-  { program: "KC-46 Tanker", cost: 15, status: "Active", branch: "Air Force" },
-  { program: "Patriot Missile System", cost: 12, status: "Active", branch: "Army" },
-  { program: "Aegis Combat System", cost: 8, status: "Active", branch: "Navy" },
-  { program: "B-21 Raider Bomber", cost: 25, status: "Development", branch: "Air Force" },
-  { program: "Ground Based Strategic Deterrent", cost: 13, status: "Development", branch: "Air Force" },
-  { program: "Columbia-class Submarine", cost: 31, status: "Development", branch: "Navy" },
+  { program: "F-35 Lightning II", cost: 80.2, status: "Active", branch: "Multi-Service" },
+  { program: "Columbia-class Submarine", cost: 36.8, status: "Development", branch: "Navy" },
+  { program: "Virginia-class Submarine", cost: 28.4, status: "Active", branch: "Navy" },
+  { program: "B-21 Raider Bomber", cost: 27.5, status: "Development", branch: "Air Force" },
+  { program: "DDG-51 Destroyer", cost: 24.3, status: "Active", branch: "Navy" },
+  { program: "KC-46 Tanker", cost: 17.2, status: "Active", branch: "Air Force" },
+  { program: "Sentinel (GBSD)", cost: 15.8, status: "Development", branch: "Air Force" },
+  { program: "Patriot/THAAD Systems", cost: 14.6, status: "Active", branch: "Army" },
+  { program: "Long-Range Hypersonic Weapon", cost: 12.3, status: "Development", branch: "Multi-Service" },
+  { program: "CH-53K Heavy Lift Helicopter", cost: 8.7, status: "Active", branch: "Navy/Marines" },
 ]
 
+// FY2026 regional spending (updated with conflict-related increases)
 const regionalSpending = [
-  { region: "Indo-Pacific", amount: 156, percentage: 19.1, priority: "High" },
-  { region: "Europe/NATO", amount: 89, percentage: 10.9, priority: "High" },
-  { region: "Middle East", amount: 67, percentage: 8.2, priority: "Medium" },
-  { region: "Homeland Defense", amount: 234, percentage: 28.7, priority: "Critical" },
-  { region: "Global Operations", amount: 270, percentage: 33.1, priority: "High" },
+  { region: "Indo-Pacific", amount: 195, percentage: 19.6, priority: "Critical" },
+  { region: "Europe/NATO", amount: 142, percentage: 14.3, priority: "Critical" },
+  { region: "Middle East", amount: 98, percentage: 9.8, priority: "High" },
+  { region: "Homeland Defense", amount: 268, percentage: 26.9, priority: "Critical" },
+  { region: "Global Operations", amount: 292, percentage: 29.3, priority: "High" },
 ]
 
+// Historical spending including FY2026 (with reconciliation)
 const historicalSpending = [
   { year: 2020, amount: 714, gdpPercent: 3.4 },
   { year: 2021, amount: 740, gdpPercent: 3.2 },
   { year: 2022, amount: 766, gdpPercent: 3.0 },
   { year: 2023, amount: 792, gdpPercent: 2.9 },
-  { year: 2024, amount: 805, gdpPercent: 2.8 },
-  { year: 2025, amount: 816, gdpPercent: 2.8 },
+  { year: 2024, amount: 850, gdpPercent: 2.9 },
+  { year: 2025, amount: 886, gdpPercent: 2.9 },
+  { year: 2026, amount: 995, gdpPercent: 3.2 },
 ]
 
 const branchDetails: Record<
@@ -197,7 +209,7 @@ export default function MilitarySpendingBreakdown() {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Military Spending Breakdown</h1>
         <p className="text-lg text-gray-600">
-          Comprehensive analysis of {formatCurrency(totalDefenseSpending)} in defense spending for FY 2025
+          Comprehensive analysis of {formatCurrency(totalDefenseSpending)} in defense spending for FY 2026 (including $156.2B reconciliation)
         </p>
       </div>
 
@@ -296,7 +308,7 @@ export default function MilitarySpendingBreakdown() {
             <Card>
               <CardHeader>
                 <CardTitle>Historical Defense Spending</CardTitle>
-                <CardDescription>Defense spending trend 2020-2025</CardDescription>
+                <CardDescription>Defense spending trend 2020-2026 (FY26 includes reconciliation)</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
