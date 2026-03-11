@@ -20,9 +20,9 @@ interface USAspendingAgencyResponse {
 
 interface USAspendingAwardResponse {
   results: Array<{
-    Award ID: string
-    Recipient Name: string
-    Award Amount: number
+    "Award ID": string
+    "Recipient Name": string
+    "Award Amount": number
     Description: string
     "Awarding Agency": string
     "Awarding Sub Agency": string
