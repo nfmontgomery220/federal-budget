@@ -453,21 +453,32 @@ function DashboardHome({ setActiveView }: { setActiveView: (view: ActiveTool) =>
           </div>
         </div>
 
-        {/* 2025 Fiscal Reality */}
+        {/* FY2026 Fiscal Reality */}
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">2025 Fiscal Reality</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">FY2026 Fiscal Reality</h2>
+          <p className="text-sm text-gray-500 text-center mb-4">Source: CBO February 2026 Budget Outlook</p>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-red-600 mb-2">$2.65T</div>
-              <div className="text-gray-600">Annual Deficit</div>
+              <div className="text-3xl font-bold text-red-600 mb-2">$1.85T</div>
+              <div className="text-gray-600">Projected Deficit</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">$7.2T</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">$7.0T</div>
               <div className="text-gray-600">Total Spending</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">$4.55T</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">$5.2T</div>
               <div className="text-gray-600">Total Revenue</div>
+            </div>
+          </div>
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
+              <div className="text-center">
+                <span className="font-semibold">Spending:</span> 23.1% of GDP
+              </div>
+              <div className="text-center">
+                <span className="font-semibold">Revenue:</span> 17.2% of GDP
+              </div>
             </div>
           </div>
         </div>
