@@ -43,6 +43,7 @@ import SocialSecurityMedicareAnalysis from "../social-security-medicare-analysis
 import SocialSecuritySolutions from "../social-security-solutions"
 import FullProposalGenerator from "../full-proposal-generator"
 import LegislativeUpdateSystem from "../legislative-update-system"
+import CurrentConflictsTracker from "../current-conflicts-tracker"
 
 type ActiveTool =
   | "dashboard"
@@ -63,6 +64,7 @@ type ActiveTool =
   | "contact-congress"
   | "consensus"
   | "admin-congress"
+  | "current-conflicts"
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState<ActiveTool>("dashboard")
@@ -122,6 +124,8 @@ export default function HomePage() {
         return <ConsensusDashboard />
       case "admin-congress":
         return <AdminCongressData />
+      case "current-conflicts":
+        return <CurrentConflictsTracker />
       default:
         return <DashboardHome setActiveView={setActiveView} />
     }
@@ -313,6 +317,22 @@ function DashboardHome({ setActiveView }: { setActiveView: (view: ActiveTool) =>
             <CardContent>
               <Button className="w-full bg-yellow-600 hover:bg-yellow-700" onClick={() => setActiveView("consensus")}>
                 View Consensus Data
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Current Conflicts Tracker */}
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <CardTitle className="text-red-900">Current Conflicts Tracker</CardTitle>
+              </div>
+              <CardDescription>Real-time tracking of military spending across active global operations</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full bg-red-600 hover:bg-red-700" onClick={() => setActiveView("current-conflicts")}>
+                Track Active Conflicts
               </Button>
             </CardContent>
           </Card>
